@@ -7,8 +7,11 @@ from PIL import Image
 from io import BytesIO
 from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results
 from ultralytics import YOLO
-# CONNECT TO KAFKA
 
+SAVE_RESULTS = True
+ENABLE_UPSAMPLING = True
+
+# CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
@@ -24,7 +27,7 @@ num = 0
 
 model = YOLO("hardhat.pt")
 counter = 0
-SAVE_RESULTS = True
+
 
 def predict_hardhat(image_path = None, image_data = None):
     # helmet : 0
@@ -50,7 +53,10 @@ def predict_hardhat(image_path = None, image_data = None):
 
 
 try:
-    consumer.subscribe(['croppedPersonByte'])
+    if ENABLE_UPSAMPLING:
+        consumer.subscribe(['upsampledPersonByte'])
+    else:
+        consumer.subscribe(['croppedPersonByte'])
     print('SUBSCRIBED TO TOPIC: croppedPersonByte')
     print('HARDHAT DETECT SERVER STARTED')
     print('WAITING FOR IMAGES...')
@@ -75,5 +81,3 @@ try:
 finally:
     # Close down consumer to commit final offsets.
     consumer.close()
-
-

@@ -8,8 +8,11 @@ from io import BytesIO
 from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results
 from ultralytics import YOLO
 from model import return_model_and_generator, predict_cigaratte_smoker
-# CONNECT TO KAFKA
 
+SAVE_RESULTS = True
+ENABLE_UPSAMPLING = True
+
+# CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
@@ -25,7 +28,7 @@ num = 0
 
 model,gen = return_model_and_generator()
 counter = 0
-SAVE_RESULTS = True
+
 
 def predict_smoker(image_path = None, image_data = None):
     # helmet : 0
@@ -47,8 +50,11 @@ def predict_smoker(image_path = None, image_data = None):
 
 
 try:
-    consumer.subscribe(['croppedPersonByte'])
-    print('SUBSCRIBED TO TOPIC: croppedPersonByte')
+    if ENABLE_UPSAMPLING:
+        consumer.subscribe(['upsampledPersonByte'])
+    else:
+        consumer.subscribe(['croppedPersonByte'])
+    print('SUBSCRIBED TO TOPIC: upsampledPersonByte')
     print('CIGARATTE DETECT SERVER STARTED')
     print('WAITING FOR IMAGES...')
     while running:
