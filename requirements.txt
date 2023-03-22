@@ -1,0 +1,16 @@
+numpy
+Pillow
+ultralytics
+torch
+torchvision
+torchaudio
+pandas
+tqdm
+scipy
+requests
+PyYAML
+opencv-python
+confluent-kafka
+flask
+Werkzeug
+keras_preprocessing
