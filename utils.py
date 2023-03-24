@@ -77,7 +77,7 @@ def plot_bboxes(image, boxes, labels=[], colors=[], score=True, conf=None):
 
   return image
 
-def plot_results(results, image_path = None, image_data = None, result_name = None,box_type = False, labels=[]):
+def plot_results(results, folder_path = None,image_path = None, image_data = None, result_name = None,box_type = False, labels=[]):
     image = None
     if image_path:
       image = Image.open(image_path)
@@ -91,11 +91,18 @@ def plot_results(results, image_path = None, image_data = None, result_name = No
       img = plot_bboxes(image, results,score=True)
     result_image_name = result_name if result_name else image_path.split('/')[-1]
     print('OS',os.listdir())
-    folder_path = 'results/'
-    if os.path.exists('results'):
-        folder_path = 'results/'
-    if os.path.exists('../results'):
-        folder_path = '../results/'
-    else:
-        os.mkdir('results') 
+
+    if not folder_path:
+      folder_path = 'results/'
+    if not os.path.exists(folder_path):
+      os.mkdir(folder_path)
     cv2.imwrite(folder_path + result_image_name, img)
+
+# read ENV.txt file and return config dict
+def read_env(file_path):
+  env_file = open(file_path, 'r')
+  env = env_file.read()
+  env = env.split('\n')
+  env = [i.split('=') for i in env]
+  env = {i[0]:i[1] for i in env}
+  return env

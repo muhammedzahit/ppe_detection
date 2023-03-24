@@ -5,12 +5,17 @@ import json
 import numpy as np
 from PIL import Image
 from io import BytesIO
-from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results
+from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
 from ultralytics import YOLO
 from model import return_model_and_generator, predict_cigaratte_smoker
+import os
 
+env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
-ENABLE_UPSAMPLING = True
+ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+
+if not (os.path.exists('../results/cigaratte_detect')):
+    os.makedirs('../results/cigaratte_detect')
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -40,9 +45,13 @@ def predict_smoker(image_path = None, image_data = None):
     prediction = None
     if image_path:
         prediction = predict_cigaratte_smoker(model, gen, image_path)
+        counter += 1
+        image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
     if image_data:
         image_data.save('temp.jpg')
         prediction = predict_cigaratte_smoker(model, gen, 'temp.jpg')
+        counter += 1
+        image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
 
     print('--'*40)
     print('PREDICTION: ', prediction)

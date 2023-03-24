@@ -6,10 +6,14 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 from ultralytics import YOLO
-from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results
+from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
 import sys
 
+PERSON_DETECT_THRESHOLD = 0.6
+
 # CONNECT TO KAFKA
+
+env_config = read_env('../ENV.txt')
 
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
@@ -24,6 +28,7 @@ consumer = Consumer(client_config)
 # PERSON DETECT AI MODEL
 
 model = YOLO("yolov8n.pt")
+model('./test.png')
 
 print('---------------------------------')
 print('PERSON DETECT SERVER STARTING ....')
@@ -48,7 +53,7 @@ def predict_person(image_path = None, image_data = None):
     
     COUNTER += 1
     if SAVE_RESULTS:
-        plot_results(results, image_data=image_data, result_name = 'person_pred_' + str(COUNTER) + '.jpg')
+        plot_results(results, folder_path='../results/person_detect/',image_data=image_data, result_name = 'person_pred_' + str(COUNTER) + '.jpg')
 
     for p in person_imgs:
         byteImg = get_bytes_from_image_data(p)
@@ -71,7 +76,7 @@ def get_person_datas(results,image_path=None, image_data=None):
     person_imgs = []
     
     for i in results[0].boxes.boxes:
-        if(i[-1] == 0): # class 0 sa / Person tahmin edildiyse
+        if(i[-1] == 0 and i[-2] > PERSON_DETECT_THRESHOLD): # class 0 ise / Person tahmin edildiyse ve threshold uzerindeyse
             i0, i1, i2, i3 = int(i[0]), int(i[1]),int(i[2]),int(i[3])
             crop = img.crop((i0,i1,i2,i3))
             person_imgs.append(img.crop((i0,i1,i2,i3)))
