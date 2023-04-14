@@ -14,9 +14,6 @@ env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
 
-if not (os.path.exists('../results/cigaratte_detect')):
-    os.makedirs('../results/cigaratte_detect')
-
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
 
@@ -34,6 +31,10 @@ num = 0
 model,gen = return_model_and_generator()
 counter = 0
 
+# bir üst klasöre cigaratte_detect adında bir klasör oluşturur
+
+if not os.path.exists('../results/cigaratte_detect'):
+    os.makedirs('../results/cigaratte_detect')
 
 def predict_smoker(image_path = None, image_data = None):
     # helmet : 0
