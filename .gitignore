@@ -1,1 +1,4 @@
 results/*
+age_detect_server/*.h5
+fire_detect_server/*.h5
+age_detect_server/faces/*

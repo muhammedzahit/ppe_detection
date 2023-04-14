@@ -9,6 +9,9 @@ from io import BytesIO
 from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img
+import wget
+import os
+import shutil
 
 
 env_config = read_env('../ENV.txt')
@@ -37,7 +40,8 @@ def predict_age(image_path = None, image_data = None):
     global counter
     print('PREDICTING AGE...')
     results = None
-    print('RES',results[0].boxes.boxes)
+    image_data = np.array(image_data)
+    #print('RES',results[0].boxes.boxes)
 
     face_cascade = cv2.CascadeClassifier('cascade/haarcascade_frontalface_default.xml')
     gender_dict = {0:"Male",1:"Female"}
@@ -51,6 +55,7 @@ def predict_age(image_path = None, image_data = None):
             )
 
     count = 0
+    print("Number of faces detected: " + str(len(faces)))
     for (x,y,w,h) in faces:
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
         roi_color = img[y:y+h, x:x+w]
@@ -58,14 +63,25 @@ def predict_age(image_path = None, image_data = None):
         count += 1
         
     for i in range(count):
-        img = load_img("faces/face" + str(i) + ".jpg", grayscale=True)
-        img = img.resize((128,128), Image.ANTIALIAS)
+        img = load_img("faces/face" + str(i) + ".jpg", color_mode = "grayscale")
+        img = img.resize((128,128), Image.LANCZOS)
         img = np.array(img)
         img = img / 255
         pred = model.predict(img.reshape(1, 128, 128, 1))
         pred_gender = gender_dict[round(pred[0][0][0])] 
         pred_age = round(pred[1][0][0])
         print("Prediction: Gender = ", pred_gender," Age = ", pred_age)
+
+        if SAVE_RESULTS:
+            # check age_detect_server folder in results folder
+            if not os.path.exists('../results/age_detect_server'):
+                os.makedirs('../results/age_detect_server')
+            #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
+            shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
+            #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
+            counter += 1
+    
+    print('--------------------------------')
 
 
 try:
