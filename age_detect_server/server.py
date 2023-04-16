@@ -8,15 +8,33 @@ from PIL import Image
 from io import BytesIO
 from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import load_img
 import wget
 import os
+import patoolib
 import shutil
 
 
 env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+
+# check model file exists unzip model.zip 
+if not os.path.exists('model.h5'):
+    # check rar files exists in model folder
+    # if not download rar files
+    if not os.path.exists('./model/model.part1.rar'):
+        urls = {
+            'model.part1.rar': 'https://drive.google.com/uc?export=download&id=1LPG-X9kJ97m6VzMX1fgMIShLlKRQGP50',
+            'model.part2.rar': 'https://drive.google.com/uc?export=download&id=1WQr58waH28OWOPzg_cFGU0zEZ7Ctht43',
+            'model.part3.rar': 'https://drive.google.com/uc?export=download&id=1TpUVZK_dje9lbZblgoJoShR0VIKPo7jZ',
+            'model.part4.rar': 'https://drive.google.com/uc?export=download&id=1Hje4OyL72tdEjcp9I3H0cfi32b9FCt9r'
+        }
+        for file_name, url in urls.items():
+            print('DOWNLOADING', file_name)
+            wget.download(url, './model/'+file_name)
+            print('DOWNLOADED', file_name)
+    print('UNZIPPING...')
+    patoolib.extract_archive('./model/model.part1.rar', outdir='./model/')
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -32,13 +50,7 @@ num = 0
 
 # AGE DETECT AI MODEL
 
-# check model file exists unzip model.zip 
-if not os.path.exists('model.h5'):
-    print('UNZIPPING...')
-    os.popen('unzip model.zip')
-    print('UNZIPPED')
-
-model = tf.keras.models.load_model('model.h5')
+model = tf.keras.models.load_model('./model/model.h5')
 counter = 0
 
 
@@ -69,7 +81,7 @@ def predict_age(image_path = None, image_data = None):
         count += 1
         
     for i in range(count):
-        img = load_img("faces/face" + str(i) + ".jpg", color_mode = "grayscale")
+        img = tf.keras.preprocessing.image.load_img("faces/face" + str(i) + ".jpg", color_mode = "grayscale")
         img = img.resize((128,128), Image.LANCZOS)
         img = np.array(img)
         img = img / 255

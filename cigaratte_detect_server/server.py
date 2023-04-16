@@ -7,12 +7,16 @@ from PIL import Image
 from io import BytesIO
 from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
 from ultralytics import YOLO
-from model import return_model_and_generator, predict_cigaratte_smoker
+import mobilenetv2_model
+import efficientnetb3_model
 import os
+import patoolib
+import tensorflow as tf
 
 env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' # 'EFFICIENTNETB3'
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -25,34 +29,39 @@ consumer = Consumer(client_config)
 
 running = True
 num = 0
-
-# CIGARATTE DETECT AI MODEL
-
-model,gen = return_model_and_generator()
-counter = 0
+model = None
 
 # bir üst klasöre cigaratte_detect adında bir klasör oluşturur
-
 if not os.path.exists('../results/cigaratte_detect'):
     os.makedirs('../results/cigaratte_detect')
 
+# CIGARATTE DETECT AI MODEL
+if MODEL == 'MOBILENETV2':
+    model,gen = mobilenetv2_model.return_model_and_generator()
+elif MODEL == 'EFFICIENTNETB3':
+    model = efficientnetb3_model.load_model()
+counter = 0
+
+
+
 def predict_smoker(image_path = None, image_data = None):
-    # helmet : 0
-    # vest : 1
-    # head : 2
     global counter
     print('CHECKING CIGARATTE SMOKER...')
     
-    prediction = None
-    if image_path:
-        prediction = predict_cigaratte_smoker(model, gen, image_path)
-        counter += 1
-        image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
     if image_data:
-        image_data.save('temp.jpg')
-        prediction = predict_cigaratte_smoker(model, gen, 'temp.jpg')
-        counter += 1
-        image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
+        image_data.save('test.jpg')
+        image_path = 'test.jpg' 
+
+    prediction = None
+
+    if MODEL == 'MOBILENETV2':
+        prediction = mobilenetv2_model.predict_cigaratte_smoker(model, gen, image_path)
+    elif MODEL == 'EFFICIENTNETB3':
+        prediction = efficientnetb3_model.predict(model, image_path)
+    counter += 1
+    image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
+        
+    
 
     print('--'*40)
     print('PREDICTION: ', prediction)

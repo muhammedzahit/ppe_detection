@@ -16,3 +16,4 @@ Werkzeug
 keras_preprocessing
 pyanime4k
 wget
+patoolib

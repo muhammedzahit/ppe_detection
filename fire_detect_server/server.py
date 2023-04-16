@@ -15,6 +15,13 @@ env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
 
+# check model file exists if not download with wget
+if not os.path.exists('model.h5'):
+    print('MODEL FILE NOT FOUND, DOWNLOADING...')
+    url = 'https://drive.google.com/uc?export=download&id=1rVO_T6Q7iNvCyEUoRBUuL7dC1tEPRZuW'
+    wget.download(url, 'model.h5')
+    print('MODEL FILE DOWNLOADED')
+
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
 
@@ -28,14 +35,6 @@ running = True
 counter = 1
 
 # FIRE DETECT AI MODEL
-
-# check model file exists if not download with wget
-if not os.path.exists('model.h5'):
-    print('MODEL FILE NOT FOUND, DOWNLOADING...')
-    url = 'https://drive.google.com/uc?export=download&id=1rVO_T6Q7iNvCyEUoRBUuL7dC1tEPRZuW'
-    wget.download(url, 'model.h5')
-    print('MODEL FILE DOWNLOADED')
-
 
 model = load_model('model.h5')
 
