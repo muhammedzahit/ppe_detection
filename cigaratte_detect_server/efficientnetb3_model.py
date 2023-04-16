@@ -18,12 +18,12 @@ def load_model():
         # if not download rar files
         if not os.path.exists('./efficientnetb3_model/model.part1.rar'):
             urls = {
-                'model.part1.rar': 'https://drive.google.com/uc?export=download&id=1JbNrk2JyHn23EhCr4Rhgq1OsmZnFKWND',
-                'model.part2.rar': 'https://drive.google.com/uc?export=download&id=1hufn66lCriADAtnaVdbvduosvdfZXQjr',
-                'model.part3.rar': 'https://drive.google.com/uc?export=download&id=1TQ3QwnlbC4WnP1q_leDTX6NqUFK6WbA3',
-                'model.part4.rar': 'https://drive.google.com/uc?export=download&id=1sr_IxpOQWEL9hWXO4vg_aRf3-TQgxhA3',
-                'model.part5.rar': 'https://drive.google.com/uc?export=download&id=1y9XRVTzhJ5_hqqgJd8_kPCgaO8a1-BkZ',
-                'model.part6.rar': 'https://drive.google.com/uc?export=download&id=13LJC5k9O0-b3zVEnleRro_cNK1hDoj88'
+                'model.part1.rar': 'https://drive.google.com/uc?export=download&id=1gfVXry2zVP2Vk3rpZ42iiqNpYFkK45m3',
+                'model.part2.rar': 'https://drive.google.com/uc?export=download&id=1ahjC3ccIqHPfGqIgZDjEJqJGyZss1lZ6',
+                'model.part3.rar': 'https://drive.google.com/uc?export=download&id=1RZnGlkvflOKOPQMfAUD5XgCDkAWY9vHh',
+                'model.part4.rar': 'https://drive.google.com/uc?export=download&id=1p0Z55AQTqEb6unseMJVmXq63UAqE5uQD',
+                'model.part5.rar': 'https://drive.google.com/uc?export=download&id=1Hmoc_KeAFcpWHmgysXumyq4crU2MF1Le',
+                'model.part6.rar': 'https://drive.google.com/uc?export=download&id=1wj8C-7-Nymn8FkjrGJVYL0GHBSpL6nLO'
             }
             for file_name, url in urls.items():
                 print('DOWNLOADING', file_name)
