@@ -9,7 +9,7 @@ from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import os
-
+import wget
 
 env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
@@ -28,6 +28,14 @@ running = True
 counter = 1
 
 # FIRE DETECT AI MODEL
+
+# check model file exists if not download with wget
+if not os.path.exists('model.h5'):
+    print('MODEL FILE NOT FOUND, DOWNLOADING...')
+    url = 'https://drive.google.com/uc?export=download&id=1rVO_T6Q7iNvCyEUoRBUuL7dC1tEPRZuW'
+    wget.download(url, 'model.h5')
+    print('MODEL FILE DOWNLOADED')
+
 
 model = load_model('model.h5')
 

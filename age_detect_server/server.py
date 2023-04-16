@@ -30,7 +30,13 @@ consumer = Consumer(client_config)
 running = True
 num = 0
 
-# HARDHAT DETECT AI MODEL
+# AGE DETECT AI MODEL
+
+# check model file exists unzip model.zip 
+if not os.path.exists('model.h5'):
+    print('UNZIPPING...')
+    os.popen('unzip model.zip')
+    print('UNZIPPED')
 
 model = tf.keras.models.load_model('model.h5')
 counter = 0
