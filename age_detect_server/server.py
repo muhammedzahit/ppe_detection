@@ -18,8 +18,11 @@ env_config = read_env('../ENV.txt')
 SAVE_RESULTS = True
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
 
+if not os.path.exists('./model'):
+    os.makedirs('./model')
+
 # check model file exists unzip model.zip 
-if not os.path.exists('model.h5'):
+if not os.path.exists('./model/model.h5'):
     # check rar files exists in model folder
     # if not download rar files
     if not os.path.exists('./model/model.part1.rar'):

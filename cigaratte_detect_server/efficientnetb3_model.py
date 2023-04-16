@@ -10,6 +10,9 @@ def scalar(img):
 
 def load_model():
     # check model file exists unzip model.zip 
+    if not os.path.exists('./efficientnetb3_model'):
+        os.makedirs('./efficientnetb3_model')
+
     if not os.path.exists('./efficientnetb3_model/model.h5'):
         # check rar files exists in model folder
         # if not download rar files
