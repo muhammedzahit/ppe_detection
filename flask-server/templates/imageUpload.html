@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PPE Detection Image Upload Page</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: Arial, sans-serif;
+        background-image: url("{{ url_for('static', filename='images/background-main.jpeg') }}");
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+      }
+      
+      .container {
+        margin: 100px auto;
+        max-width: 600px;
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        opacity: 0.9;
+      }
+      
+      .title {
+        font-size: 28px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        
+      }
+      
+      .drop-zone {
+        background-color: #F6F9FC;
+        border: 3px dashed #C3CFE2;
+        border-radius: 10px;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        cursor: pointer;
+        margin-bottom: 30px;
+      }
+      
+      .drop-zone.drag-over {
+        background-color: #C3CFE2;
+      }
+      
+      .drop-zone p {
+        font-size: 20px;
+        color: #A0AEC0;
+        margin: 0;
+      }
+      
+      .drop-zone i {
+        font-size: 50px;
+        color: #A0AEC0;
+        margin-bottom: 10px;
+      }
+      
+      .file-input {
+        display: none;
+      }
+      
+      .upload-form {
+        text-align: center;
+      }
+      
+      .upload-button {
+        background-color: #3B82F6;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 0 auto;
+        display: block;
+      }
+
+        .upload-button:hover {
+            background-color: darkblue;
+        }
+        
+        .image-preview img {
+        max-width: 100px;
+        max-height: 100px;
+        }
+    
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <div class="title">Image Upload</div>
+        <form id="upload-form" action="/imageUploader" method="POST">
+          <div class="drop-zone" id="drop-zone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Drag and drop your files here</p>
+            <input type="file" name="file" id="file-input" class="file-input" multiple />
+          </div>
+          <button type="submit" class="upload-button">Upload</button>
+        </form>
+      </div>
+    <script src="https://kit.fontawesome.com/2a2b32bbf0.js" crossorigin="anonymous"></script>
+    <script>
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+      const uploadForm = document.getElementById('upload-form');
+      const droppedFiles = [];
+
+      // Prevent default drag behaviors
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+      });
+
+      // Highlight drop zone when item is dragged over it
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+  dropZone.addEventListener(eventName, unhighlight, false);
+});
+
+// Handle dropped files
+dropZone.addEventListener('drop', handleDrop, false);
+
+// Handle file input change
+fileInput.addEventListener('change', handleFileSelect, false);
+
+// Handle form submit
+uploadForm.addEventListener('submit', handleFormSubmit, false);
+
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function highlight(e) {
+  dropZone.classList.add('drag-over');
+}
+
+function unhighlight(e) {
+  dropZone.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  handleFiles(files);
+}
+
+function handleFileSelect(e) {
+  const files = e.target.files;
+  handleFiles(files);
+}
+
+function handleFiles(files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    droppedFiles.push(file);
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = function () {
+      const img = new Image();
+      img.src = reader.result;
+      img.onload = function () {
+        const imageDiv = document.createElement('div');
+        imageDiv.classList.add('image-preview');
+        imageDiv.appendChild(img);
+        dropZone.appendChild(imageDiv);
+      };
+    };
+  }
+}
+
+function handleFormSubmit(e) {
+  e.preventDefault();
+  const formData = new FormData();
+  for (let i = 0; i < droppedFiles.length; i++) {
+    formData.append('file' + i, droppedFiles[i]);
+  }
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', uploadForm.action, true);
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      console.log(xhr.responseText);
+    }
+  };
+  // change page according to POST response
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            window.location.href = '/imageUploadSuccess'
+        }
+    };
+
+
+  xhr.send(formData);}
+    </script>
+  </body>
+</html>
+

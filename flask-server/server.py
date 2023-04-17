@@ -10,91 +10,54 @@ import cv2
 import csv
 import io
 import datetime
+from streamPage import gen_frames
 
 app = Flask(__name__)
 app.secret_key = 'random'
-
-camera = cv2.VideoCapture(0)
-STREAM_PAGE_FPS = 1
-STREAM_PAGE_COUNTER = 1
-STREAM_PAGE_SAVE_CAPTIONS = True
-prev_time = datetime.datetime.now()
-
-UPLOAD_FOLDER = 'uploads'
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
 print('CLIENT CONFIG',client_config)
 producer = Producer(client_config)
 
-def gen_frames():
-    global prev_time
-    global STREAM_PAGE_COUNTER
-    global STREAM_PAGE_SAVE_CAPTIONS
-    while True:
-        success, frame = camera.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            curr_time = datetime.datetime.now()
-            
-            ret,buffer=cv2.imencode('.jpg',frame)
-            frame_buffer=buffer.tobytes()
-
-            diff = curr_time - prev_time
-            if((diff.microseconds + diff.seconds * 1000000) > (1000000/STREAM_PAGE_FPS)):
-                print('saved')
-                prev_time = datetime.datetime.now()
-                if(STREAM_PAGE_SAVE_CAPTIONS):
-                    cv2.imwrite('./stream_page_captures/a' + str(STREAM_PAGE_COUNTER) + '.jpg', frame)
-                STREAM_PAGE_COUNTER += 1
-                producer.produce("rawImageByte", key="key", value=frame_buffer)
-                producer.flush()   
-
-        yield(b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_buffer + b'\r\n') 
+prev_time = datetime.datetime.now()
 
 @app.route('/')
-def home():
-    return render_template('hello.html')
-
-@app.route('/upload_page')
-def upload_page():
-    return render_template('upload.html')
-
-@app.route('/uploader', methods = ['POST'])
-def uploader():
-    f = request.files['file']
-    data = f.stream.read()
-    producer.produce("rawImageByte", key="key", value=data)
-    producer.flush()
-   
-    return 'File Uploaded'
-
-@app.route('/get_big_array', methods = ['POST'])
-def get_array():
-    data = request.json
-    params = data['params']
-    arr = np.array(data['arr'])
-    print(params, arr.shape, str(arr))
-    return "Success"
-
-@app.route('/stream_page')
 def index():
+    return render_template('main.html')
+
+@app.route('/streamingPage')
+def stream_page():
     return render_template('stream.html')
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen_frames(producer), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/imageUpload')
+def image_upload():
+    return render_template('imageUpload.html')
+
+@app.route('/imageUploadSuccess', methods = ['GET'])
+def imageUploadSuccess():
+    return render_template('main.html', message = "Your images is uploaded successfully")
+
+
+@app.route('/imageUploader', methods = ['POST'])
+def imageUploader():
+    for i in range(0,100):
+        # check request.files[key] exits
+        if 'file'+str(i) in request.files:
+            f = request.files['file'+str(i)]
+            data = f.stream.read()
+            producer.produce("rawImageByte", key="key", value=data)
+            producer.flush()
+        else:
+            return 'Images uploaded successfully'
+
+@app.route('/monitoringPage')
+def monitoring_page():
+    return '<h1>Monitoring Page</h1>'
 
 if __name__ == '__main__':
-    app.run(debug = True)
-
-
-
-
-
-
+    app.run(debug=True)

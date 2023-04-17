@@ -20,11 +20,11 @@
             .card-group {
                 margin-top: 100px;
                 justify-content: center;
-                text-align: center;
             }
 
             .card {
                 margin: 0 10px;
+                opacity: 0.8;
                 background-color: bisque;
             }
 
@@ -46,7 +46,6 @@
             .btn-outline-primary {
                 border-color: #007bff;
                 color: #007bff;
-                
             }
 
             .btn-outline-primary:hover {
@@ -72,15 +71,32 @@
             
             <div class="card-group">
                 <div class="card">
-                    <div class="row">
-                        <div class="col-lg-8  offset-lg-2">
-                            <h3 class="card-title">Live Streaming</h3>
-                            <img src="{{ url_for('video_feed') }}" width="100%">
-                        </div>
+                    <img class="card-img-top" src="https://th.bing.com/th/id/R.66754ec538a650d7f0058a92dfa87c2c?rik=SHBlW1yBVoRKZw&pid=ImgRaw&r=0" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">Image Upload</h5>
+                        <p class="card-text">Get PPE detection results from your uploaded image.</p>
+                        </p>
+                        <a href="/imageUpload" class="btn btn-outline-primary">Go To Page</a>
                     </div>
-                    <a href="/" class="btn btn-outline-primary">Return To Menu</a>
                 </div>
-            >
+                <div class="card">
+                    <img class="card-img-top" src="https://cdn0.iconfinder.com/data/icons/business-flat-26/56/006_-_Profit-512.png" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">Monitoring</h5>
+                        <p class="card-text">Monitor Your Detection Results</p>
+                        <br/>
+                        <a href="/monitoringPage" class="btn btn-outline-primary">Go To Page</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img class="card-img-top" src="https://cdn1.iconfinder.com/data/icons/radio-stations/64/signal-internet-wifi-phone-512.png" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">Streaming Page</h5>
+                        <p class="card-text">Get PPE detection results from video streaming</p>
+                        <a href="/streamingPage" class="btn btn-outline-primary">Go To Page</a>
+                    </div>
+                </div>
+            </div>
             <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
                 integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
                 crossorigin="anonymous"></script>
