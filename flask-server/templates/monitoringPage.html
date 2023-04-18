@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>KOU - PPE Detection</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+            integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+            crossorigin="anonymous">
+        <style>
+            body {
+                background-image: url("{{ url_for('static', filename='images/background-main.jpeg') }}");
+                background-repeat: no-repeat;
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
+
+            .card-group {
+                margin-top: 50px;
+                justify-content: center;
+            }
+
+            .card {
+                margin: 0 10px;
+                opacity: 0.9;
+                background-color: bisque;
+            }
+
+            .card-body {
+                text-align: center;
+				
+            }
+
+			.list-group{
+				max-height: 300px;
+				overflow-y:auto;
+    			-webkit-overflow-scrolling: touch;
+			}
+
+            .card-title {
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 20px;
+            }
+
+            .card-text {
+                font-size: 18px;
+                margin-bottom: 30px;
+            }
+
+            .btn-outline-primary {
+                border-color: #007bff;
+                color: #007bff;
+            }
+
+            .btn-outline-primary:hover {
+                background-color: #007bff;
+                border-color: #007bff;
+                color: #fff;
+            }
+            .card-img-top {
+                height: 150px;
+                width: 150px;
+                margin: 0 auto;
+                
+            }
+        </style>
+    </head>
+	<script>
+		function buttonClicked(result){
+			console.log(result)
+			// get modal with myModal id
+			var modal = document.getElementById("myModal");
+
+		}
+	</script>
+    <body>
+        {% if message %}
+        <div class="alert alert-dark" role="alert" style="text-align:center">
+            {{message}}
+          </div>
+            {% endif %}
+			
+        <div class="container">
+            <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+				<div class="modal-dialog">
+				  <div class="modal-content">
+					  <div class="modal-body">
+						  <img id="modalimg" src="//placehold.it/1000x600" class="img-responsive">
+					  </div>
+				  </div>
+				</div>
+			</div>
+            <div class="card-group">
+                <div class="card">
+                    <img class="card-img-top" src="https://storage.googleapis.com/kaggle-datasets-images/3031348/5211375/12b53a6decfdd0ceda299d067f69f1e5/dataset-cover.jpg?t=2023-03-22-04-04-52" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">HardHat-Vest Detection</h5>
+                        <div class="list-group">
+							<div id="hardhat_results">
+
+							</div>
+						</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img class="card-img-top" src="https://www.ris-ai.com/static/images/models/gender-age-detection-opencv.jpg" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">Age Detection</h5>
+                        <div class="list-group">
+							<div id="age_results">
+
+							</div>
+						</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img class="card-img-top" src="https://media.licdn.com/dms/image/C4E33AQGuBOM5_OvUQg/productpage-image_1128_635/0/1623565889615/mirrag_ai_mirrag_fire_safety_image?e=2147483647&v=beta&t=FFLM2YAAFyPgNAz9M2wAjtRHVMJqPJPyLh9iwwLOxPU" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">Fire-Smoke Detection</h5>
+                        <div class="list-group">
+							<div id="fire_results">
+
+							</div>
+						</div>
+                    </div>
+                </div>
+				<div class="card">
+                    <img class="card-img-top" src="https://i.ytimg.com/vi/vEnQIptZzyI/maxresdefault.jpg" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">Smoker Detection</h5>
+                        <div class="list-group">
+							<div id="smoker_results">
+
+							</div>
+						</div>
+                    </div>
+                </div>
+            </div>
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+
+            <script>
+				$('#myModal').on('show.bs.modal', function (event) {
+					var button = $(event.relatedTarget) // Button that triggered the modal
+					var recipient = button.data('id') // Extract info from data-* attributes
+					// If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+					// Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+					var modal = $(this)
+					
+					modal.find('#modalimg').attr('src', '/static/Results/' + recipient)
+				})
+			</script>
+			<script>
+                let MONITORING_INTERVAL = 2000;
+				let liste = ['hardhat_results', 'age_results', 'fire_results', 'smoker_results']
+				setInterval(() => {
+					for (let i = 0; i < liste.length; i++){
+						let place_for_result = liste[i]
+						
+						$.ajax({
+							url: '/monitoringPageUploader/' + place_for_result,
+							type: 'get',
+							data: {},
+							success: function(response){
+								$('#'+place_for_result).html(response);
+							},
+							error: function(xhr){
+								console.log('ERROR! ',xhr);
+							}
+						});
+					}
+				}, MONITORING_INTERVAL);
+            </script>
+        </div>
+    </body>
+</html>
