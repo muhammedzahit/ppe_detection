@@ -107,6 +107,7 @@
             <p>Drag and drop your files here</p>
             <input type="file" name="file" id="file-input" class="file-input" multiple />
           </div>
+          <input type="file" id="file-select" name="file-select" multiple><br><br>
           <button type="submit" class="upload-button">Upload</button>
         </form>
       </div>
@@ -114,6 +115,7 @@
     <script>
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
+      const fileSelect = document.getElementById('file-select');
       const uploadForm = document.getElementById('upload-form');
       const droppedFiles = [];
 
@@ -136,6 +138,8 @@ dropZone.addEventListener('drop', handleDrop, false);
 
 // Handle file input change
 fileInput.addEventListener('change', handleFileSelect, false);
+
+fileSelect.addEventListener('change', handleFileSelect, false)
 
 // Handle form submit
 uploadForm.addEventListener('submit', handleFormSubmit, false);

@@ -33,6 +33,6 @@ def image(type, key):
     return Response(buffer.tobytes(), mimetype='image/jpeg')
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False, port=5010)
+    app.run(debug=True, use_reloader=False, port=5010, host='0.0.0.0')
 
 

@@ -48,7 +48,7 @@ def box_label(image, box, label='', color=(128, 128, 128), txt_color=(255, 255, 
                 lw / 3,
                 txt_color,
                 thickness=tf,
-                lineType=cv2.LINE_AA)
+                lineType=2)
 
 def plot_bboxes(image, boxes, labels=[], colors=[], score=True, conf=None):
   #Define COCO Labels
