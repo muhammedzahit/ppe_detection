@@ -8,6 +8,7 @@ import os
 import json
 import pickle
 import urllib3
+import threading
 
 env_config = read_env('../ENV.txt')
 
@@ -77,20 +78,10 @@ def updateResults(type, image_path, success, pred=""):
     print(r.json())
             
 
-print('WAITING FOR UPLOADED IMAGE')
-while True:
-    msgRawImageByte = consumer.poll(timeout=1.0)
-    msgHardhat = consumer_hardhat.poll(timeout=1.0)
-    msgFire = consumer_fire.poll(timeout=1.0)
-    msgCroppedPersonByte = consumer_croppedPersonByte.poll(timeout=1.0)
-    msgSmoker = consumer_smoker.poll(timeout=1.0)
-    msgAge = consumer_age.poll(timeout=1.0)
-
-    messages = {'hardhat_results' : msgHardhat, 'rawImageByte' : msgRawImageByte, 'croppedPersonByte' : msgCroppedPersonByte,
-                'smoker_results' : msgSmoker, 'fire_results' : msgFire, 'age_results' : msgAge}
-    
-    for msg_type in ['hardhat_results', 'rawImageByte', 'croppedPersonByte']:
-        msg = messages[msg_type]
+def thread_type_1(consumer, msg_type):
+    print(msg_type + ' thread started')
+    while True:
+        msg = consumer.poll(timeout=1.0)
         if checkMessage(msg):
             #msg = msg.value().decode('utf-8')
             messageKey = msg.key().decode('utf-8')
@@ -100,18 +91,25 @@ while True:
             if msg_type != 'rawImageByte':
                 updateResults(msg_type, image_path=image_name, success=True, pred="")
 
-    keys = {'fire_results' : 'rawImageKey', 'smoker_results' : 'croppedPersonKey', 'age_results' : 'croppedPersonKey'}
-    paths = {'fire_results' : 'rawImageByte/', 'smoker_results' : 'croppedPersonByte/', 'age_results' : 'croppedPersonByte/'}
-
-    for msg_type in ['smoker_results', 'fire_results', 'age_results']:
-        msg = messages[msg_type]
+def thread_type_2(consumer, msg_type, key, path):
+    print(msg_type + ' thread started... // ', 'key : ', key, '// path:', path)
+    KEY = key
+    while True:
+        msg = consumer.poll(timeout=1.0)
         if checkMessage(msg):
             msgValue = msg.value().decode('utf-8')
             msgValue = json.loads(msgValue)
-            print(msgValue)
-            key = msgValue[keys[msg_type]]
+            print(msgValue, KEY)
+            print(msgValue[KEY])
+            key = msgValue[KEY]
             prediction = msgValue['prediction']
 
-            updateResults(msg_type, image_path=paths[msg_type]+key, success=True, pred=prediction)
+            updateResults(msg_type, image_path=path+key, success=True, pred=prediction)
 
-    
+
+threading.Thread(target=thread_type_1, args=(consumer_hardhat, 'hardhat_results')).start()
+threading.Thread(target=thread_type_1, args=(consumer, 'rawImageByte')).start()
+threading.Thread(target=thread_type_1, args=(consumer_croppedPersonByte, 'croppedPersonByte')).start()
+threading.Thread(target=thread_type_2, args=(consumer_fire, 'fire_results', 'rawImageKey', 'rawImageByte/')).start()
+threading.Thread(target=thread_type_2, args=(consumer_smoker, 'smoker_results', 'croppedPersonKey', 'croppedPersonByte/')).start()
+threading.Thread(target=thread_type_2, args=(consumer_age, 'age_results', 'croppedPersonKey', 'croppedPersonByte/')).start()
