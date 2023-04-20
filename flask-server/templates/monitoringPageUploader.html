@@ -1,5 +1,9 @@
 {% for result in results %}
-    <button type="button" class="list-group-item list-group-item-action bg-success" data-toggle="modal" data-target="#myModal" data-id="{{result}}">{{result}}</button>
+    {% if result.success == True %}
+        <button type="button" class="list-group-item list-group-item-action bg-success" data-toggle="modal" data-target="#myModal" data-id="{{result.image_path}}" data-pred="{{result.pred}}">{{result.image_path}}</button>
+    {% else %}
+        <button type="button" class="list-group-item list-group-item-action bg-danger" data-toggle="modal" data-target="#myModal" data-id="{{result.image_path}}" data-pred="{{result.pred}}">{{result.image_path}}</button>
+    {% endif %}
 {% endfor %}
 
 

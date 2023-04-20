@@ -27,7 +27,10 @@ def get_bytes_from_image_data(image_data):
     return byteImg
 
 def get_image_data_from_bytes(byteImg):
-    return Image.open(BytesIO(byteImg))
+    image_data = Image.open(BytesIO(byteImg))
+    if image_data.mode != 'RGB':
+        image_data = image_data.convert('RGB')
+    return image_data
 
 def box_label(image, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
   lw = max(round(sum(image.shape) / 2 * 0.003), 2)
@@ -77,7 +80,7 @@ def plot_bboxes(image, boxes, labels=[], colors=[], score=True, conf=None):
 
   return image
 
-def plot_results(results, folder_path = None,image_path = None, image_data = None, result_name = None,box_type = False, labels=[]):
+def plot_results(results, folder_path = None,image_path = None, image_data = None, result_name = None,box_type = False, labels=[], save_image = True, return_image = False):
     image = None
     if image_path:
       image = Image.open(image_path)
@@ -96,7 +99,11 @@ def plot_results(results, folder_path = None,image_path = None, image_data = Non
       folder_path = 'results/'
     if not os.path.exists(folder_path):
       os.mkdir(folder_path)
-    cv2.imwrite(folder_path + result_image_name, img)
+    
+    if save_image:
+      cv2.imwrite(folder_path + result_image_name, img)
+    if return_image:
+      return img
 
 # read ENV.txt file and return config dict
 def read_env(file_path):

@@ -15,6 +15,10 @@ PERSON_DETECT_THRESHOLD = 0.6
 
 env_config = read_env('../ENV.txt')
 
+SENDING_METHOD = env_config['SENDING_METHOD']
+SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
+COUNTER = 0
+
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
@@ -33,9 +37,6 @@ model('./test.png')
 print('---------------------------------')
 print('PERSON DETECT SERVER STARTING ....')
 print('---------------------------------')
-
-COUNTER = 0
-SAVE_RESULTS = True
 
 def predict_person(image_path = None, image_data = None):
     global COUNTER
@@ -60,9 +61,10 @@ def predict_person(image_path = None, image_data = None):
         print('SENDING MESSAGE SIZE', len(byteImg), type(byteImg))
         producer.produce('croppedPersonByte', key = "person" + str(COUNTER), value = byteImg)
         
-                
-
-        producer.flush()
+        if SENDING_METHOD == 'flush':
+            producer.flush()
+        if SENDING_METHOD == 'poll':
+            producer.poll(0)
     
     
 
@@ -99,6 +101,7 @@ try:
             raise Exception('MSG ERROR')
         else:
             #msg = msg.value().decode('utf-8')
+            print(msg.key())
             print('IMAGE RECEIVED') 
             img = get_image_data_from_bytes(msg.value())
             

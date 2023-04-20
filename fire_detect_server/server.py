@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../')
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, Producer
 import json
 import numpy as np
 from PIL import Image
@@ -12,8 +12,9 @@ import os
 import wget
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = True
+SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+SENDING_METHOD = env_config['SENDING_METHOD']
 
 # check model file exists if not download with wget
 if not os.path.exists('model.h5'):
@@ -24,6 +25,7 @@ if not os.path.exists('model.h5'):
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
+producer = Producer(client_config)
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'fire_detect_server'
@@ -44,7 +46,7 @@ def prepare_data(image_data):
     img = np.resize(img,(1, 224, 224, 3))
     return img
 
-def predict_fire(image_path = None, image_data = None):
+def predict_fire(image_path = None, image_data = None, msgKey = None):
     # {'default': 0, 'fire': 1, 'smoke': 2}
     
     global counter
@@ -68,6 +70,16 @@ def predict_fire(image_path = None, image_data = None):
         if not os.path.exists('../results/fire_detect_server'):
             os.mkdir('../results/fire_detect_server')
         image_data.save('../results/fire_detect_server/{}_{}.jpg'.format(counter, prediction))
+    
+    # send results to kafka
+    value = json.dumps({'prediction': prediction, 'rawImageKey': msgKey})
+    print('SENDING VALUE TO KAFKA: ', value)
+    producer.produce('fireResults', key=msgKey, value=value)
+    
+    if SENDING_METHOD == 'flush':
+        producer.flush()
+    if SENDING_METHOD == 'poll':
+        producer.poll(0)
 
     counter += 1
 
@@ -96,8 +108,9 @@ try:
         else:
             #msg = msg.value().decode('utf-8')
             print('IMAGE RECEIVED')
+            msgKey = msg.key().decode('utf-8')
             img = get_image_data_from_bytes(msg.value())
-            predict_fire(image_data=img)
+            predict_fire(image_data=img, msgKey=msgKey)
 
             
 finally:

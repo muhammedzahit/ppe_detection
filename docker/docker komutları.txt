@@ -10,3 +10,7 @@ docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server 
 - rawImageByte
 - croppedPersonByte
 - upsampledPersonByte
+- hardhatResults
+- fireResults
+- ageResults
+- smokerResults

@@ -1,4 +1,4 @@
 results/*
 *.h5
 *.rar
-flask-server/static/Results/*
+image_database_server/images/*

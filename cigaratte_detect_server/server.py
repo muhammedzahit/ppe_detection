@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../')
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, Producer
 import json
 import numpy as np
 from PIL import Image
@@ -14,12 +14,14 @@ import patoolib
 import tensorflow as tf
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = True
+SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+SENDING_METHOD = env_config['SENDING_METHOD']
 MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' # 'EFFICIENTNETB3'
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
+producer = Producer(client_config)
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'cigaratte_detect_server'
@@ -44,7 +46,7 @@ counter = 0
 
 
 
-def predict_smoker(image_path = None, image_data = None):
+def predict_smoker(image_path = None, image_data = None, msgKey = None):
     global counter
     print('CHECKING CIGARATTE SMOKER...')
     
@@ -59,8 +61,21 @@ def predict_smoker(image_path = None, image_data = None):
     elif MODEL == 'EFFICIENTNETB3':
         prediction = efficientnetb3_model.predict(model, image_path)
     counter += 1
-    image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
-        
+
+    if SAVE_RESULTS:
+        image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
+    
+    # send results to kafka
+    value = json.dumps({'prediction': prediction, 'croppedPersonKey': msgKey})
+    print('SENDING VALUE TO KAFKA: ', value)
+    producer.produce('smokerResults', key=msgKey, value=value)
+    
+    if SENDING_METHOD == 'flush':
+        producer.flush()
+    if SENDING_METHOD == 'poll':
+        producer.poll(0)
+
+    counter += 1
     
 
     print('--'*40)
@@ -91,7 +106,8 @@ try:
             #msg = msg.value().decode('utf-8')
             print('IMAGE RECEIVED')
             img = get_image_data_from_bytes(msg.value())
-            predict_smoker(image_data=img)
+            msgKey = msg.key().decode('utf-8')
+            predict_smoker(image_data=img, msgKey=msgKey)
 
             
 finally:

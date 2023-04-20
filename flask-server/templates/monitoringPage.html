@@ -66,6 +66,10 @@
                 margin: 0 auto;
                 
             }
+
+            .modalpred{
+                text-align: center;
+            }
         </style>
     </head>
 	<script>
@@ -88,7 +92,8 @@
 				<div class="modal-dialog">
 				  <div class="modal-content">
 					  <div class="modal-body">
-						  <img id="modalimg" src="//placehold.it/1000x600" class="img-responsive">
+						  <img id="modalimg" src="//placehold.it/1000x600" class="img-responsive" width="465" height="300">
+                          <h5 class="modalpred" id="modalpred"></h5>
 					  </div>
 				  </div>
 				</div>
@@ -147,12 +152,17 @@
 				$('#myModal').on('show.bs.modal', function (event) {
 					var button = $(event.relatedTarget) // Button that triggered the modal
 					var recipient = button.data('id') // Extract info from data-* attributes
+                    var pred = button.data('pred')
 					// If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
 					// Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
 					var modal = $(this)
-					
-					modal.find('#modalimg').attr('src', '/static/Results/' + recipient)
-				})
+					modal.find('#modalpred').text('')
+					modal.find('#modalimg').attr('src', "{{databaseURL}}" + recipient)
+                    console.log('pred :',pred)
+                    if(pred !== "")
+                        modal.find('#modalpred').text('PREDICTION : ' + pred)
+                    
+                })
 			</script>
 			<script>
                 let MONITORING_INTERVAL = 2000;

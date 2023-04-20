@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../')
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, Producer, KafkaError, KafkaException
 import json
 import numpy as np
 import cv2
@@ -15,8 +15,9 @@ import shutil
 
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = True
+SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
 ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+SENDING_METHOD = env_config['SENDING_METHOD']
 
 if not os.path.exists('./model'):
     os.makedirs('./model')
@@ -41,6 +42,7 @@ if not os.path.exists('./model/model.h5'):
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
+producer = Producer(client_config)
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'age_detect_server'
@@ -57,7 +59,7 @@ model = tf.keras.models.load_model('./model/model.h5')
 counter = 0
 
 
-def predict_age(image_path = None, image_data = None):
+def predict_age(image_path = None, image_data = None, msgKey = None):
     global counter
     print('PREDICTING AGE...')
     results = None
@@ -76,7 +78,13 @@ def predict_age(image_path = None, image_data = None):
             )
 
     count = 0
+    min_age = 100
     print("Number of faces detected: " + str(len(faces)))
+
+    if(len(faces) == 0):
+        print('NO FACE DETECTED EXITING...')
+        return
+
     for (x,y,w,h) in faces:
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
         roi_color = img[y:y+h, x:x+w]
@@ -91,6 +99,7 @@ def predict_age(image_path = None, image_data = None):
         pred = model.predict(img.reshape(1, 128, 128, 1))
         pred_gender = gender_dict[round(pred[0][0][0])] 
         pred_age = round(pred[1][0][0])
+        min_age = min(min_age, pred_age)
         print("Prediction: Gender = ", pred_gender," Age = ", pred_age)
 
         if SAVE_RESULTS:
@@ -101,6 +110,19 @@ def predict_age(image_path = None, image_data = None):
             shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
             #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
             counter += 1
+        
+    # send result to kafka
+    value = json.dumps({'prediction': min_age, 'croppedPersonKey': msgKey})
+    print('SENDING VALUE TO KAFKA: ', value)
+    producer.produce('ageResults', key=msgKey, value=value)
+
+    if SENDING_METHOD == 'flush':
+        producer.flush()
+    if SENDING_METHOD == 'poll':
+        producer.poll(0)
+    
+    
+    counter += 1
     
     print('--------------------------------')
 
@@ -128,7 +150,8 @@ try:
             #msg = msg.value().decode('utf-8')
             print('IMAGE RECEIVED')
             img = get_image_data_from_bytes(msg.value())
-            predict_age(image_data=img)
+            msgKey = msg.key().decode('utf-8')
+            predict_age(image_data=img, msgKey = msgKey)
 
             
 finally:
