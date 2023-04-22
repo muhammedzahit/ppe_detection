@@ -1,20 +1,10 @@
 import sys
-import os
 sys.path.append('../')
-from flask import Flask, redirect, url_for, render_template, request, make_response, session, flash, Response
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, Response
 from utils import read_ccloud_config
-import numpy as np
-from confluent_kafka import Producer, Consumer
-from utils import get_image_data_from_bytes, read_env
-import cv2
-import csv
-import io
-import datetime
+from confluent_kafka import Producer
+from utils import read_env
 from streamPage import gen_frames
-import time
-import json
-from multiprocessing import Process
 
 app = Flask(__name__)
 app.secret_key = 'random'

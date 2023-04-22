@@ -19,3 +19,7 @@ start /B python database.py
 cd ..
 cd ./person_detect_server
 start /B python server.py
+cd ..
+cd ./upsampling_server
+start /B python server.py
+pause

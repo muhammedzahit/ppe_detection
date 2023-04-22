@@ -1,14 +1,8 @@
 import sys
 import os
 sys.path.append('../')
-from flask import Flask, redirect, url_for, render_template, request, make_response, session, flash, Response
-from werkzeug.utils import secure_filename
-from utils import read_ccloud_config
-import numpy as np
-from confluent_kafka import Producer, Consumer
-from utils import get_image_data_from_bytes
+from flask import Flask,Response
 import cv2
-from multiprocessing import Process
 
 app = Flask(__name__)
 app.secret_key = 'random'

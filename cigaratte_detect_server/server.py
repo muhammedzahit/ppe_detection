@@ -2,15 +2,10 @@ import sys
 sys.path.append('../')
 from confluent_kafka import Consumer, Producer
 import json
-import numpy as np
-from PIL import Image
-from io import BytesIO
-from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
-from ultralytics import YOLO
+from utils import read_ccloud_config, get_image_data_from_bytes, read_env
 import mobilenetv2_model
 import efficientnetb3_model
 import os
-import patoolib
 import tensorflow as tf
 
 env_config = read_env('../ENV.txt')

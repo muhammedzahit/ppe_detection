@@ -3,25 +3,19 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-import itertools
-import random
 
 # Import visualization libraries
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import cv2
 
 
 # Tensorflow Libraries
 from tensorflow import keras
-from tensorflow.keras import layers,models
+from tensorflow.keras import layers
 from keras_preprocessing.image import ImageDataGenerator
 from keras.layers import Dense, Dropout
-from tensorflow.keras.callbacks import Callback, EarlyStopping,ModelCheckpoint
-from tensorflow.keras.optimizers import Adam, legacy
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.optimizers import legacy
 from tensorflow.keras import Model
-from tensorflow.keras.layers.experimental import preprocessing
 # System libraries
 from pathlib import Path
 import os.path

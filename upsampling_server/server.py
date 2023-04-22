@@ -2,13 +2,9 @@ import pathlib
 import pyanime4k
 import sys
 sys.path.append('../')
-from confluent_kafka import Consumer, Producer
-import json
-import numpy as np
+from confluent_kafka import Consumer, Producer, KafkaError, KafkaException
 from PIL import Image
-from io import BytesIO
-from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results
-from ultralytics import YOLO
+from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, read_env
 import datetime
 from fsrcnn import load_model, upscale_image
 
@@ -22,6 +18,10 @@ UPSAMPLING_MODE = FSRCNN
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
+# READ ENV
+env_config = read_env('../ENV.txt')
+ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING']
+
 del client_config['message.max.bytes']
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
@@ -30,7 +30,7 @@ client_config['group.id'] = 'upsampling_server'
 print('CLIENT CONFIG',client_config)
 consumer = Consumer(client_config)
 
-running = True
+running = ENABLE_UPSAMPLING
 num = 0
 
 # FSRCCN MODEL

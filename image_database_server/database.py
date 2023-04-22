@@ -2,15 +2,15 @@
 import requests
 import sys
 sys.path.append('../')
-from utils import read_env, read_ccloud_config, get_image_data_from_bytes, get_bytes_from_image_data
+from utils import read_env, read_ccloud_config, get_image_data_from_bytes
 from confluent_kafka import Producer, Consumer, KafkaError, KafkaException
 import os
 import json
-import pickle
-import urllib3
 import threading
 
 env_config = read_env('../ENV.txt')
+
+ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING']
 
 # connect to local flask server
 url = env_config['FLASK_SERVER_URL']
@@ -49,6 +49,10 @@ consumer.subscribe(['rawImageByte'])
 client_config['group.id'] = 'database_croppedPersonByte'
 consumer_croppedPersonByte = Consumer(client_config)
 consumer_croppedPersonByte.subscribe(['croppedPersonByte'])
+
+client_config['group.id'] = 'database_upsampledPersonByte'
+consumer_upsampledPersonByte = Consumer(client_config)
+consumer_upsampledPersonByte.subscribe(['upsampledPersonByte'])
 
 def checkMessage(msg):
     if msg is None: 
@@ -109,7 +113,12 @@ def thread_type_2(consumer, msg_type, key, path):
 
 threading.Thread(target=thread_type_1, args=(consumer_hardhat, 'hardhat_results')).start()
 threading.Thread(target=thread_type_1, args=(consumer, 'rawImageByte')).start()
-threading.Thread(target=thread_type_1, args=(consumer_croppedPersonByte, 'croppedPersonByte')).start()
+
+if ENABLE_UPSAMPLING:
+    threading.Thread(target=thread_type_1, args=(consumer_upsampledPersonByte, 'upsampledPersonByte')).start()
+else:
+    threading.Thread(target=thread_type_1, args=(consumer_croppedPersonByte, 'croppedPersonByte')).start()
+
 threading.Thread(target=thread_type_2, args=(consumer_fire, 'fire_results', 'rawImageKey', 'rawImageByte/')).start()
 threading.Thread(target=thread_type_2, args=(consumer_smoker, 'smoker_results', 'croppedPersonKey', 'croppedPersonByte/')).start()
 threading.Thread(target=thread_type_2, args=(consumer_age, 'age_results', 'croppedPersonKey', 'croppedPersonByte/')).start()

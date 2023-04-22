@@ -1,6 +1,4 @@
 import cv2
-import csv
-import io
 import datetime
 import os
 
