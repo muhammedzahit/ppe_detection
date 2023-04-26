@@ -5,11 +5,12 @@ from PIL import Image
 from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
 from ultralytics import YOLO
 import os
+import numpy as np
 
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
-ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
+ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
 
 # CONNECT TO KAFKA
@@ -56,12 +57,18 @@ def predict_hardhat(image_path = None, image_data = None):
     else:
         result_image_data = plot_results(results, folder_path='../results/hardhat_detect/' ,image_data=image_data, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=True, return_image=True)
     if SAVE_RESULTS:
+        if not os.path.exists('../results/hardhat_detect'):
+            os.makedirs('../results/hardhat_detect')
+
+        print('TYPE OF RESULT IMAGE DATA', type(result_image_data))
+
+        if(type(result_image_data) == np.ndarray):
+            result_image_data = Image.fromarray(result_image_data)
+
         result_image_data.save('../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg')
     
     counter += 1
     print('PREDICTION', results[0].boxes.boxes)
-    
-    result_image_data = Image.fromarray(result_image_data)
 
     # SEND RESULTS TO KAFKA
     producer.produce('hardhatResults', key=str(counter), value=get_bytes_from_image_data(result_image_data))

@@ -71,21 +71,17 @@ def monitoring_page():
 def update_results():
     global COUNTER
     global RESULTS
-    print('RESULTS ID', id(RESULTS))
     # get the data from the request
    
     content_type = request.headers['Content-Type']
-    print('CONTENT TYPE', content_type)
     if content_type == 'application/json':
         # getting data with headers type, image_path, success
         data = request.get_json()
         typeImage = data['type']
-        print('DATA', data)
         if typeImage not in RESULTS:
             RESULTS[typeImage] = []
        
         RESULTS[typeImage].append({'success': data['success'], 'image_path': data['image_path'], 'pred' : data['pred']})   
-        print('RESULTS', RESULTS)
 
     return {'message': 'Info Received'}
 

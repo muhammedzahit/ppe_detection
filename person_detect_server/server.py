@@ -13,7 +13,7 @@ PERSON_DETECT_THRESHOLD = 0.6
 env_config = read_env('../ENV.txt')
 
 SENDING_METHOD = env_config['SENDING_METHOD']
-SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
+SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
 COUNTER = 0
 
 client_config = read_ccloud_config('../client.txt')
@@ -56,6 +56,11 @@ def predict_person(image_path = None, image_data = None):
     for p in person_imgs:
         byteImg = get_bytes_from_image_data(p)
         print('SENDING MESSAGE SIZE', len(byteImg), type(byteImg))
+        
+        # Do not send small images
+        if len(byteImg) < 100000:
+            continue
+
         producer.produce('croppedPersonByte', key = "person" + str(COUNTER), value = byteImg)
         
         if SENDING_METHOD == 'flush':

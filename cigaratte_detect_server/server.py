@@ -9,8 +9,8 @@ import os
 import tensorflow as tf
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = False if env_config['AI_MODELS_SAVE_RESULTS'] == 'False' else False
-ENABLE_UPSAMPLING = False if env_config['ENABLE_UPSAMPLING'] == 'False' else True
+SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
+ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
 MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' # 'EFFICIENTNETB3'
 
@@ -81,9 +81,10 @@ def predict_smoker(image_path = None, image_data = None, msgKey = None):
 try:
     if ENABLE_UPSAMPLING:
         consumer.subscribe(['upsampledPersonByte'])
+        print('SUBSCRIBED TO TOPIC: upsampledPersonByte')
     else:
         consumer.subscribe(['croppedPersonByte'])
-    print('SUBSCRIBED TO TOPIC: upsampledPersonByte')
+        print('SUBSCRIBED TO TOPIC: croppedPersonByte')
     print('CIGARATTE DETECT SERVER STARTED')
     print('WAITING FOR IMAGES...')
     while running:

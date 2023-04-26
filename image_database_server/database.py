@@ -10,7 +10,9 @@ import threading
 
 env_config = read_env('../ENV.txt')
 
-ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING']
+ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
+
+FIRE_DETECT_MODEL = env_config['FIRE_DETECT_MODEL']
 
 # connect to local flask server
 url = env_config['FLASK_SERVER_URL']
@@ -103,8 +105,6 @@ def thread_type_2(consumer, msg_type, key, path):
         if checkMessage(msg):
             msgValue = msg.value().decode('utf-8')
             msgValue = json.loads(msgValue)
-            print(msgValue, KEY)
-            print(msgValue[KEY])
             key = msgValue[KEY]
             prediction = msgValue['prediction']
 
@@ -114,11 +114,18 @@ def thread_type_2(consumer, msg_type, key, path):
 threading.Thread(target=thread_type_1, args=(consumer_hardhat, 'hardhat_results')).start()
 threading.Thread(target=thread_type_1, args=(consumer, 'rawImageByte')).start()
 
+personByteTopic = None
 if ENABLE_UPSAMPLING:
-    threading.Thread(target=thread_type_1, args=(consumer_upsampledPersonByte, 'upsampledPersonByte')).start()
+    personByteTopic = {'consumer' : consumer_upsampledPersonByte, 'topic' : 'upsampledPersonByte'}
 else:
-    threading.Thread(target=thread_type_1, args=(consumer_croppedPersonByte, 'croppedPersonByte')).start()
+    personByteTopic = {'consumer' : consumer_croppedPersonByte, 'topic' : 'croppedPersonByte'}
 
-threading.Thread(target=thread_type_2, args=(consumer_fire, 'fire_results', 'rawImageKey', 'rawImageByte/')).start()
-threading.Thread(target=thread_type_2, args=(consumer_smoker, 'smoker_results', 'croppedPersonKey', 'croppedPersonByte/')).start()
-threading.Thread(target=thread_type_2, args=(consumer_age, 'age_results', 'croppedPersonKey', 'croppedPersonByte/')).start()
+threading.Thread(target=thread_type_1, args=(personByteTopic['consumer'], personByteTopic['topic'])).start()
+
+if FIRE_DETECT_MODEL == 'VGG16':
+    threading.Thread(target=thread_type_2, args=(consumer_fire, 'fire_results', 'rawImageKey', 'rawImageByte/')).start()
+elif FIRE_DETECT_MODEL == 'YOLO':
+    threading.Thread(target=thread_type_1, args=(consumer_fire, 'fire_results')).start()
+
+threading.Thread(target=thread_type_2, args=(consumer_smoker, 'smoker_results', 'croppedPersonKey', personByteTopic['topic'] + '/')).start()
+threading.Thread(target=thread_type_2, args=(consumer_age, 'age_results', 'croppedPersonKey', personByteTopic['topic'] + '/')).start()

@@ -20,7 +20,8 @@ producer = Producer(client_config)
 
 # READ ENV
 env_config = read_env('../ENV.txt')
-ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING']
+SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
+ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 
 del client_config['message.max.bytes']
 
@@ -40,6 +41,8 @@ counter = 0
 SAVE_RESULTS = True
 
 def upsample_image(image_data):
+    global counter
+    counter += 1
     if UPSAMPLING_MODE == ANIME_4K:
         image_data.save('temp.jpg')
         pyanime4k.upscale_images(pathlib.Path('temp.jpg'))
@@ -58,10 +61,11 @@ def upsample_image(image_data):
 
 
 try:
-    consumer.subscribe(['croppedPersonByte'])
-    print('SUBSCRIBED TO TOPIC: croppedPersonByte')
-    print('UPSAMPLING SERVER STARTED')
-    print('WAITING FOR IMAGES...')
+    if running:
+        consumer.subscribe(['croppedPersonByte'])
+        print('SUBSCRIBED TO TOPIC: croppedPersonByte')
+        print('UPSAMPLING SERVER STARTED')
+        print('WAITING FOR IMAGES...')
     while running:
         msg = consumer.poll(timeout=1.0)
         if msg is None: 
