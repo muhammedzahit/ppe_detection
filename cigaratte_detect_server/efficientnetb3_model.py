@@ -13,17 +13,24 @@ def load_model():
     if not os.path.exists('./efficientnetb3_model'):
         os.makedirs('./efficientnetb3_model')
 
-    if not os.path.exists('./efficientnetb3_model/model.h5'):
+    model_name = 'model.h5'
+
+    for path in os.listdir('./efficientnetb3_model'):
+        if path.endswith('.h5'):
+            model_name = path
+
+    if not os.path.exists('./efficientnetb3_model/' + model_name):
         # check rar files exists in model folder
         # if not download rar files
         if not os.path.exists('./efficientnetb3_model/model.part1.rar'):
             urls = {
-                'model.part1.rar': 'https://drive.google.com/uc?export=download&id=1gfVXry2zVP2Vk3rpZ42iiqNpYFkK45m3',
-                'model.part2.rar': 'https://drive.google.com/uc?export=download&id=1ahjC3ccIqHPfGqIgZDjEJqJGyZss1lZ6',
-                'model.part3.rar': 'https://drive.google.com/uc?export=download&id=1RZnGlkvflOKOPQMfAUD5XgCDkAWY9vHh',
-                'model.part4.rar': 'https://drive.google.com/uc?export=download&id=1p0Z55AQTqEb6unseMJVmXq63UAqE5uQD',
-                'model.part5.rar': 'https://drive.google.com/uc?export=download&id=1Hmoc_KeAFcpWHmgysXumyq4crU2MF1Le',
-                'model.part6.rar': 'https://drive.google.com/uc?export=download&id=1wj8C-7-Nymn8FkjrGJVYL0GHBSpL6nLO'
+                'model.part1.rar': 'https://drive.google.com/uc?export=download&id=1kZxMuYqJbYg4c9BoYHC37K3KYfFV7IAv',
+                'model.part2.rar': 'https://drive.google.com/uc?export=download&id=1Xeekah4WWPv-DataqwfePobZ_HLLpapR',
+                'model.part3.rar': 'https://drive.google.com/uc?export=download&id=1EoTCZXV82Ab0mVzOr_bOESs4h6GdoyGF',
+                'model.part4.rar': 'https://drive.google.com/uc?export=download&id=1R5th-bNHDyJ30GoeMho9BaLj85PG4t39',
+                'model.part5.rar': 'https://drive.google.com/uc?export=download&id=1KwCSsW1inAuPUNFGBk8blb4fSkLxaOa0',
+                'model.part6.rar': 'https://drive.google.com/uc?export=download&id=1BdTaYvZdwTfCCDMRPAO0ypezB_jLSsWs',
+                'model.part7.rar': 'https://drive.google.com/uc?export=download&id=1DbWaDnYOFRHC6azjdoVSqKnsJmKfUWpd'
             }
             for file_name, url in urls.items():
                 print('DOWNLOADING', file_name)
@@ -32,7 +39,7 @@ def load_model():
         print('UNZIPPING...')
         patoolib.extract_archive('./efficientnetb3_model/model.part1.rar', outdir='./efficientnetb3_model/')
 
-    return tf.keras.models.load_model('./efficientnetb3_model/model.h5')
+    return tf.keras.models.load_model('./efficientnetb3_model/' + model_name)
 
 def predict(model, image_path):
     # 0 : not_smoking , 1: smoking
