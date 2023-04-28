@@ -11,8 +11,9 @@ start /B docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstra
 start /B docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic fireResults
 start /B docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic ageResults
 start /B docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic smokerResults
-ping -n 10 localhost >nul
+start /B docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic streamResults
+ping -n 15 localhost >nul
 echo 'List of topics:'
 start /B docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
-ping -n 3 localhost >nul
+ping -n 6 localhost >nul
 pause

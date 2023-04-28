@@ -2,7 +2,7 @@
 import requests
 import sys
 sys.path.append('../')
-from utils import read_env, read_ccloud_config, get_image_data_from_bytes, getDriveDownloadLink
+from utils import read_env, read_ccloud_config, get_image_data_from_bytes, getDriveDownloadLink, DriveAPI
 from confluent_kafka import Producer, Consumer, KafkaError, KafkaException
 import os
 import json
@@ -44,6 +44,12 @@ client_config['group.id'] = 'smokerResults'
 consumer_smoker = Consumer(client_config)
 consumer_smoker.subscribe(['smokerResults'])
 
+client_config['group.id'] = 'streamResults'
+consumer_stream = Consumer(client_config)
+consumer_stream.subscribe(['streamResults'])
+
+driveAPI = DriveAPI('../credentials.json')
+
 def checkMessage(msg):
     if msg is None: 
         return False
@@ -63,7 +69,7 @@ def updateResults(type, image_link, success, pred="", key=""):
             
             
 
-def thread_type_3(consumer, consumer_type):
+def thread_type(consumer, consumer_type):
     print('THREAD STARTED', consumer_type)
     while True:
         msg = consumer.poll(timeout=1.0)
@@ -84,8 +90,23 @@ def thread_type_3(consumer, consumer_type):
 
             updateResults(consumer_type, image_link=image_link, success=success, pred=pred, key=msg_json['key'])
 
+def thread_type_2(consumer, consumer_type):
+    print('THREAD STARTED', consumer_type)
+    while True:
+        msg = consumer.poll(timeout=1.0)
+        if checkMessage(msg):
+            #msg = msg.value().decode('utf-8')
+            msg_json = json.loads(msg.value().decode('utf-8'))
+            print('MESSAGE RECEIVED : ', msg_json)
+            
+            file_id = driveAPI.FileUpload(msg_json['path'], msg_json['key'], folder_id='17noLHuDVES1My9knrGuQAgLVjaTqX-Qq')
 
-threading.Thread(target=thread_type_3, args=(consumer_age, 'age_results')).start()
-threading.Thread(target=thread_type_3, args=(consumer_smoker, 'smoker_results')).start()
-threading.Thread(target=thread_type_3, args=(consumer_fire, 'fire_results')).start()
-threading.Thread(target=thread_type_3, args=(consumer_hardhat, 'hardhat_results')).start()
+            producer.produce(topic='rawImageByte', value=json.dumps({'file_id': file_id, 'key': msg_json['key']}))
+            producer.flush()
+
+
+threading.Thread(target=thread_type, args=(consumer_age, 'age_results')).start()
+threading.Thread(target=thread_type, args=(consumer_smoker, 'smoker_results')).start()
+threading.Thread(target=thread_type, args=(consumer_fire, 'fire_results')).start()
+threading.Thread(target=thread_type, args=(consumer_hardhat, 'hardhat_results')).start()
+threading.Thread(target=thread_type_2, args=(consumer_stream, 'stream_results')).start()
