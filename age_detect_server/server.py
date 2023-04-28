@@ -5,7 +5,8 @@ import json
 import numpy as np
 import cv2
 from PIL import Image
-from utils import read_ccloud_config, get_image_data_from_bytes, read_env
+from utils import read_ccloud_config, get_image_data_from_bytes, read_env, DriveAPI, getDriveDownloadLink, downloadImageFromURL\
+, getImageDataFromDriveFileId
 import tensorflow as tf
 import wget
 import os
@@ -43,6 +44,9 @@ if not os.path.exists('./model/model.h5'):
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
+# Connect to Google Drive API
+driveAPI = DriveAPI('../credentials.json')
+
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'age_detect_server'
 
@@ -77,41 +81,40 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
             )
 
     count = 0
-    min_age = 100
+    max_age = 0
     print("Number of faces detected: " + str(len(faces)))
 
     if(len(faces) == 0):
-        print('NO FACE DETECTED EXITING...')
-        return
+        max_age = 'NO FACE'
+    else:
+        for (x,y,w,h) in faces:
+            cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+            roi_color = img[y:y+h, x:x+w]
+            cv2.imwrite('faces/face' + str(count) + '.jpg', roi_color)
+            count += 1
+            
+        for i in range(count):
+            img = tf.keras.preprocessing.image.load_img("faces/face" + str(i) + ".jpg", color_mode = "grayscale")
+            img = img.resize((128,128), Image.LANCZOS)
+            img = np.array(img)
+            img = img / 255
+            pred = model.predict(img.reshape(1, 128, 128, 1))
+            pred_gender = gender_dict[round(pred[0][0][0])] 
+            pred_age = round(pred[1][0][0])
+            max_age = max(max_age, pred_age)
+            print("Prediction: Gender = ", pred_gender," Age = ", pred_age)
 
-    for (x,y,w,h) in faces:
-        cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
-        roi_color = img[y:y+h, x:x+w]
-        cv2.imwrite('faces/face' + str(count) + '.jpg', roi_color)
-        count += 1
-        
-    for i in range(count):
-        img = tf.keras.preprocessing.image.load_img("faces/face" + str(i) + ".jpg", color_mode = "grayscale")
-        img = img.resize((128,128), Image.LANCZOS)
-        img = np.array(img)
-        img = img / 255
-        pred = model.predict(img.reshape(1, 128, 128, 1))
-        pred_gender = gender_dict[round(pred[0][0][0])] 
-        pred_age = round(pred[1][0][0])
-        min_age = min(min_age, pred_age)
-        print("Prediction: Gender = ", pred_gender," Age = ", pred_age)
-
-        if SAVE_RESULTS:
-            # check age_detect_server folder in results folder
-            if not os.path.exists('../results/age_detect_server'):
-                os.makedirs('../results/age_detect_server')
-            #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
-            shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
-            #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
-            counter += 1
+            if SAVE_RESULTS:
+                # check age_detect_server folder in results folder
+                if not os.path.exists('../results/age_detect_server'):
+                    os.makedirs('../results/age_detect_server')
+                #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
+                shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
+                #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
+                counter += 1
         
     # send result to kafka
-    value = json.dumps({'prediction': min_age, 'croppedPersonKey': msgKey})
+    value = json.dumps({'prediction': max_age, 'file_id': msgKey, 'key' : 'age_detect_server_' + str(counter) + '.jpg'})
     print('SENDING VALUE TO KAFKA: ', value)
     producer.produce('ageResults', key=msgKey, value=value)
 
@@ -148,10 +151,9 @@ try:
                 raise KafkaException(msg.error())
         else:
             #msg = msg.value().decode('utf-8')
-            print('IMAGE RECEIVED')
-            img = get_image_data_from_bytes(msg.value())
-            msgKey = msg.key().decode('utf-8')
-            predict_age(image_data=img, msgKey = msgKey)
+            msg_json = json.loads(msg.value().decode('utf-8'))
+            print('MESSAGE RECEIVED : ', msg_json)
+            predict_age(image_data= getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey = msg_json['file_id'])
 
             
 finally:

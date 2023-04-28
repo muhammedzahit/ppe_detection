@@ -2,7 +2,8 @@ import sys
 sys.path.append('../')
 from confluent_kafka import Consumer, Producer
 import json
-from utils import read_ccloud_config, get_image_data_from_bytes, read_env
+from utils import read_ccloud_config, get_image_data_from_bytes, read_env, DriveAPI, getDriveDownloadLink, downloadImageFromURL\
+, getImageDataFromDriveFileId
 import mobilenetv2_model
 import efficientnetb3_model
 import os
@@ -17,6 +18,9 @@ MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' # 'EFFICIENTNETB3'
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
+
+# Connect to Google Drive API
+driveAPI = DriveAPI('../credentials.json')
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'cigaratte_detect_server'
@@ -61,7 +65,7 @@ def predict_smoker(image_path = None, image_data = None, msgKey = None):
         image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
     
     # send results to kafka
-    value = json.dumps({'prediction': prediction, 'croppedPersonKey': msgKey})
+    value = json.dumps({'prediction': prediction, 'key': 'cigaratte_pred_' + str(counter) + '.jpg', 'file_id': msgKey})
     print('SENDING VALUE TO KAFKA: ', value)
     producer.produce('smokerResults', key=msgKey, value=value)
     
@@ -100,10 +104,10 @@ try:
                 raise KafkaException(msg.error())
         else:
             #msg = msg.value().decode('utf-8')
-            print('IMAGE RECEIVED')
-            img = get_image_data_from_bytes(msg.value())
-            msgKey = msg.key().decode('utf-8')
-            predict_smoker(image_data=img, msgKey=msgKey)
+            msg_json = json.loads(msg.value().decode('utf-8'))
+            print('MESSAGE RECEIVED : ', msg_json)
+
+            predict_smoker(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey=msg_json['file_id'])
 
             
 finally:

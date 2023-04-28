@@ -1,10 +1,12 @@
+import json
 import pathlib
 import pyanime4k
 import sys
 sys.path.append('../')
 from confluent_kafka import Consumer, Producer, KafkaError, KafkaException
 from PIL import Image
-from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, read_env
+from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, read_env, DriveAPI, \
+    getImageDataFromDriveFileId
 import datetime
 from fsrcnn import load_model, upscale_image
 
@@ -17,6 +19,9 @@ UPSAMPLING_MODE = FSRCNN
 
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
+
+# Connect to Google Drive
+driveAPI = DriveAPI('../credentials.json')
 
 # READ ENV
 env_config = read_env('../ENV.txt')
@@ -43,20 +48,27 @@ SAVE_RESULTS = True
 def upsample_image(image_data):
     global counter
     counter += 1
+    output_file = None
     if UPSAMPLING_MODE == ANIME_4K:
         image_data.save('temp.jpg')
         pyanime4k.upscale_images(pathlib.Path('temp.jpg'))
-        producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = get_bytes_from_image_data(Image.open('temp_output.jpg')))
-        producer.flush()
-        print(str(datetime.datetime.now()),'IMAGE SENT TO UPSAMPLED_IMAGE_BYTE TOPIC')
-        print('---------------------------------')
+        output_file = 'temp_output.png'
+        
     elif UPSAMPLING_MODE == FSRCNN:
         image_data.save('temp.jpg')
         upscale_image(image_path = 'temp.jpg', scale = FSRCNN_SCALE, model = fsrcnn_model)
-        producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = get_bytes_from_image_data(Image.open('sr.png')))
-        producer.flush()
-        print(str(datetime.datetime.now()),'IMAGE SENT TO UPSAMPLED_IMAGE_BYTE TOPIC')
-        print('---------------------------------')
+        output_file = 'sr.png'
+
+    # save output file to drive
+    file_id = driveAPI.FileUpload(filepath=output_file, name='upsampled_' + str(counter) + '.jpg', folder_id='12-WJ1nicQU5DEmpdZohADS-Xm8P9Cy2H')
+    print('FILE SAVED TO DRIVE', file_id)
+    
+    value_ = json.dumps({'file_id' : file_id, 'key' : 'upsampled' + str(counter) + '.jpg'})
+
+    producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = value_)
+    producer.flush()
+    print(str(datetime.datetime.now()),'IMAGE SENT TO UPSAMPLED_IMAGE_BYTE TOPIC')
+    print('---------------------------------')
 
 
 
@@ -79,9 +91,9 @@ try:
                 raise KafkaException(msg.error())
         else:
             #msg = msg.value().decode('utf-8')
-            print(str(datetime.datetime.now()) ,'IMAGE RECEIVED')
-            img = get_image_data_from_bytes(msg.value())
-            upsample_image(image_data = img)
+            msg_json = json.loads(msg.value().decode('utf-8'))
+            print('MESSAGE RECEIVED', msg_json)
+            upsample_image(image_data = getImageDataFromDriveFileId(driveAPI, msg_json['file_id']))
 
             
 finally:

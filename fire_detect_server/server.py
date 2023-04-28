@@ -5,7 +5,8 @@ import json
 import numpy as np
 from PIL import Image
 from io import BytesIO
-from utils import read_ccloud_config, get_image_data_from_bytes, read_env, plot_results, get_bytes_from_image_data
+from utils import read_ccloud_config, get_image_data_from_bytes, read_env, plot_results, get_bytes_from_image_data, \
+DriveAPI, downloadImageFromURL, getDriveDownloadLink, getImageDataFromDriveFileId
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import os
@@ -40,6 +41,10 @@ elif MODEL_TYPE == 'YOLO':
     model = YOLO("model.pt")
 
     model.predict('test.jpg')
+
+# Connect Google Drive API
+
+driveAPI = DriveAPI('../credentials.json')
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -111,6 +116,7 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
             results = model(image_path)
         if image_data:
             results = model(image_data)
+            print('iiiii')
         labels = {0: u'__background__', 1: u'fire', 2: u'others',3: u'smoke'}
         print('RES',results[0].boxes.boxes)
         result_image_data = None
@@ -118,29 +124,35 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
             result_image_data = plot_results(results, folder_path='../results/fire_pred/', image_path=image_path, labels=labels, result_name = 'fire_pred_' + str(counter) + '.jpg', save_image=False, return_image=True)
         else:
             result_image_data = plot_results(results, folder_path='../results/fire_pred/' ,image_data=image_data, labels=labels, result_name = 'fire_pred_' + str(counter) + '.jpg', save_image=False, return_image=True)
+        
+        if(type(result_image_data) == np.ndarray):
+            result_image_data = Image.fromarray(result_image_data)
+        
         if SAVE_RESULTS:
             if not os.path.exists('../results/fire_detect'):
                 os.mkdir('../results/fire_detect')
-
-            print('TYPE OF RESULT IMAGE DATA', type(result_image_data))
-
-            if(type(result_image_data) == np.ndarray):
-                result_image_data = Image.fromarray(result_image_data)
 
             result_image_data.save('../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg')
         
         counter += 1
         print('PREDICTION', results[0].boxes.boxes)
+
+        # save result_image_data to local file
+        result_image_data.save('temp.jpg')
         
+        # send result_image_data to google drive
+        file_id = driveAPI.FileUpload('temp.jpg', 'fire_detect' + str(counter) + '.jpg', '1U6KbeRq9htCU8zMy-K0iU81WORqkwAO0')
+
         # SEND RESULTS TO KAFKA
-        producer.produce('fireResults', key=str(counter), value=get_bytes_from_image_data(result_image_data))
+        value_ = json.dumps({'file_id' : file_id, 'key' : 'fire_detect' + str(counter) + '.jpg'})
+        producer.produce('fireResults', key=str(counter), value=value_)
         
         if SENDING_METHOD == 'flush':
             producer.flush()
         if SENDING_METHOD == 'poll':
             producer.poll(0)
 
-        print('RESULT IMAGE SENT TO KAFKA')
+        print('RESULT SENT TO KAFKA')
 
 
 
@@ -166,10 +178,10 @@ try:
                 raise KafkaException(msg.error())
         else:
             #msg = msg.value().decode('utf-8')
-            print('IMAGE RECEIVED')
-            msgKey = msg.key().decode('utf-8')
-            img = get_image_data_from_bytes(msg.value())
-            predict_fire(image_data=img, msgKey=msgKey)
+            print('MESSAGE RECEIVED')
+            msg_json = json.loads(msg.value())
+            print('MESSAGE : ', msg_json)
+            predict_fire(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
 
             
 finally:

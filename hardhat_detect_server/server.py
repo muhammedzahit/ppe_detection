@@ -1,8 +1,10 @@
+import json
 import sys
 sys.path.append('../')
 from confluent_kafka import Consumer, Producer, KafkaError, KafkaException
 from PIL import Image
-from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env
+from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_from_bytes, plot_results, read_env, \
+DriveAPI, getDriveDownloadLink, downloadImageFromURL, getImageDataFromDriveFileId
 from ultralytics import YOLO
 import os
 import numpy as np
@@ -36,6 +38,9 @@ model = YOLO("hardhat.pt")
 model('test.png')
 counter = 0
 
+# Connect Google Drive API
+driveAPI = DriveAPI('../credentials.json')
+
 
 def predict_hardhat(image_path = None, image_data = None):
     # helmet : 0
@@ -56,38 +61,41 @@ def predict_hardhat(image_path = None, image_data = None):
         result_image_data = plot_results(results, folder_path='../results/hardhat_detect/', image_path=image_path, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=True, return_image=True)
     else:
         result_image_data = plot_results(results, folder_path='../results/hardhat_detect/' ,image_data=image_data, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=True, return_image=True)
+    
+    # save ndarray image data to jpg file
+    im = Image.fromarray(result_image_data)
+    im.save('temp.jpg')
+
     if SAVE_RESULTS:
         if not os.path.exists('../results/hardhat_detect'):
             os.makedirs('../results/hardhat_detect')
 
-        print('TYPE OF RESULT IMAGE DATA', type(result_image_data))
+        im.save('../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg')
 
-        if(type(result_image_data) == np.ndarray):
-            result_image_data = Image.fromarray(result_image_data)
-
-        result_image_data.save('../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg')
-    
     counter += 1
-    print('PREDICTION', results[0].boxes.boxes)
+
+    # SEND RESULTS TO GOOGLE DRIVE
+    file_id = driveAPI.FileUpload('temp.jpg', 'hardhat_pred_' + str(counter) + '.jpg', folder_id='1Q4sb2KoVRk2jbi-WEHElK47g_09ARdGR')
 
     # SEND RESULTS TO KAFKA
-    producer.produce('hardhatResults', key=str(counter), value=get_bytes_from_image_data(result_image_data))
-    
+    value_ = {'file_id' : file_id, 'key' : 'hardhat_pred_' + str(counter) + '.jpg'}
+    producer.produce('hardhatResults', key=str(counter), value=json.dumps(value_))
+
     if SENDING_METHOD == 'flush':
         producer.flush()
     if SENDING_METHOD == 'poll':
         producer.poll(0)
 
-    print('RESULT IMAGE SENT TO KAFKA')
-        
+    print('RESULT IMAGE SENT TO KAFKA')    
 
 
 try:
     if ENABLE_UPSAMPLING:
         consumer.subscribe(['upsampledPersonByte'])
+        print('SUBSCRIBED TO TOPIC: upsampledPersonByte')
     else:
         consumer.subscribe(['croppedPersonByte'])
-    print('SUBSCRIBED TO TOPIC: croppedPersonByte')
+        print('SUBSCRIBED TO TOPIC: croppedPersonByte')
     print('HARDHAT DETECT SERVER STARTED')
     print('WAITING FOR IMAGES...')
     while running:
@@ -103,9 +111,11 @@ try:
                 raise KafkaException(msg.error())
         else:
             #msg = msg.value().decode('utf-8')
+            msg_json = json.loads(msg.value().decode('utf-8'))
             print('IMAGE RECEIVED')
-            img = get_image_data_from_bytes(msg.value())
-            predict_hardhat(image_data=img)
+            print('MESSAGE : ', msg_json)
+
+            predict_hardhat(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
 
             
 finally:

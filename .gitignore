@@ -2,3 +2,4 @@ results/*
 *.h5
 *.rar
 image_database_server/images/*
+credentials.json

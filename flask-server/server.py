@@ -1,13 +1,18 @@
 import sys
 sys.path.append('../')
 from flask import Flask, render_template, request, Response
-from utils import read_ccloud_config
+from utils import read_ccloud_config, DriveAPI
 from confluent_kafka import Producer
 from utils import read_env
 from streamPage import gen_frames
+import json
 
 app = Flask(__name__)
 app.secret_key = 'random'
+
+# CONNECT TO GOOGLE DRIVE
+
+driveAPI = DriveAPI('../credentials.json')
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -51,7 +56,20 @@ def imageUploader():
         if 'file'+str(i) in request.files:
             f = request.files['file'+str(i)]
             data = f.stream.read()
-            producer.produce("rawImageByte", key=str(IMAGE_KEY), value=data)
+
+            # save temp image to local
+            with open('temp.jpg', 'wb') as f:
+                f.write(data)
+
+            image_key_name = 'image' + str(IMAGE_KEY) + '.jpg'
+
+            # upload image to google drive
+            file_id = driveAPI.FileUpload('temp.jpg', image_key_name, folder_id='17noLHuDVES1My9knrGuQAgLVjaTqX-Qq')
+            print('File ID uploaded: ', file_id)
+
+            value_ = json.dumps({'file_id' : file_id, 'key' : image_key_name})
+
+            producer.produce("rawImageByte", key=str(IMAGE_KEY), value=value_)
             
             if SENDING_METHOD == 'flush':
                 producer.flush()
@@ -64,7 +82,7 @@ def imageUploader():
         
 @app.route('/monitoringPage')
 def monitoring_page():
-    return render_template('monitoringPage.html', databaseURL=IMAGE_DATABASE_URL)
+    return render_template('monitoringPage.html')
 
 # add new data to results 
 @app.route('/updateResults', methods = ['POST'])
@@ -81,7 +99,7 @@ def update_results():
         if typeImage not in RESULTS:
             RESULTS[typeImage] = []
        
-        RESULTS[typeImage].append({'success': data['success'], 'image_path': data['image_path'], 'pred' : data['pred']})   
+        RESULTS[typeImage].append({'key' : data['key'],'success': data['success'], 'image_link': data['image_link'], 'pred' : data['pred']})   
 
     return {'message': 'Info Received'}
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from io import BytesIO
 from PIL import Image
 import cv2
@@ -5,6 +6,17 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
 import os
+# import the required libraries
+import pickle
+import os.path
+import io
+import shutil
+import requests
+from mimetypes import MimeTypes
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 # client.txt okumak için
 def read_ccloud_config(config_file):
@@ -113,3 +125,126 @@ def read_env(file_path):
   env = [i.split('=') for i in env]
   env = {i[0]:i[1] for i in env}
   return env
+
+class DriveAPI:
+    global SCOPES
+      
+    # Define the scopes
+    SCOPES = ['https://www.googleapis.com/auth/drive']
+  
+    def __init__(self, credential_file_path = 'credentials.json'):
+        
+        # Variable self.creds will
+        # store the user access token.
+        # If no valid token found
+        # we will create one.
+        self.creds = None
+  
+        # The file token.pickle stores the
+        # user's access and refresh tokens. It is
+        # created automatically when the authorization
+        # flow completes for the first time.
+  
+        # Check if file token.pickle exists
+        if os.path.exists('token.pickle'):
+  
+            # Read the token from the file and
+            # store it in the variable self.creds
+            with open('token.pickle', 'rb') as token:
+                self.creds = pickle.load(token)
+  
+        # If no valid credentials are available,
+        # request the user to log in.
+        if not self.creds or not self.creds.valid:
+  
+            # If token is expired, it will be refreshed,
+            # else, we will request a new one.
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    credential_file_path, SCOPES)
+                self.creds = flow.run_local_server(port=0)
+  
+            # Save the access token in token.pickle
+            # file for future usage
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(self.creds, token)
+  
+        # Connect to the API service
+        self.service = build('drive', 'v3', credentials=self.creds)
+  
+  
+    def FileDownload(self, file_id, file_name):
+        request = self.service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+          
+        # Initialise a downloader object to download the file
+        downloader = MediaIoBaseDownload(fh, request, chunksize=204800)
+        done = False
+  
+        try:
+            # Download the data in chunks
+            while not done:
+                status, done = downloader.next_chunk()
+  
+            fh.seek(0)
+              
+            # Write the received data to the file
+            with open(file_name, 'wb') as f:
+                shutil.copyfileobj(fh, f)
+  
+            print("File Downloaded")
+            # Return True if file Downloaded successfully
+            return True
+        except:
+            
+            # Return False if something went wrong
+            print("Something went wrong.")
+            return False
+    
+    def FileUpload(self, filepath, name=None, folder_id = None):
+        
+        # Extract the file name out of the file path
+        if name is None:
+          name = filepath.split('/')[-1]
+          
+        # Find the MimeType of the file
+        mimetype = MimeTypes().guess_type(name)[0]
+          
+        # create file metadata
+        file_metadata = {'name': name}
+
+        if folder_id:
+          file_metadata['parents'] = [folder_id]
+  
+        try:
+            media = MediaFileUpload(filepath, mimetype=mimetype)
+              
+            # Create a new file in the Drive storage
+            file = self.service.files().create(
+                body=file_metadata, media_body=media, fields='id').execute()
+              
+            print("File Uploaded. Returning File ID")
+
+            # Return the created file's id
+            return file.get('id')
+          
+        except:
+              
+            # Raise UploadError if file is not uploaded.
+            raise UploadError("Can't Upload File.")
+
+def getDriveDownloadLink(file_id):
+  return 'https://drive.google.com/uc?export=download&id=' + file_id 
+
+def downloadImageFromURL(url, image_path='temp.jpg'):
+  img_data = requests.get(url).content
+  with open(image_path, 'wb') as handler:
+      handler.write(img_data)
+
+def getImageDataFromDriveFileId(driveAPI,file_id):
+  # get download link from google drive file id
+  driveAPI.FileDownload(file_id, 'temp.jpg')
+  im = Image.open('temp.jpg')
+  return im
