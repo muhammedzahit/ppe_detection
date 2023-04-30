@@ -904,6 +904,9 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
 
 * Son olarak, yapılan yaş tahmini Kafka 'ageResults' başlığına gönderilir. 'File_ID' olarak ise tahminin en başında alınan görüntünün ID'si gönderilir.
 
+![Age Model Loss](age_loss.png)
+
+![Gender Model Loss](gender_loss.png)
 ### 2.5 Cigarette Smoker AI Modeli
 
 #### 2.5.1 Cigarette Smoker AI Modeli Eğitim Aşamaları
