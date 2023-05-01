@@ -52,8 +52,10 @@ producer = Producer(client_config)
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'fire_detect_server'
+client_config['message.max.bytes'] = 32000000
+client_config['fetch.message.max.bytes'] = 32000000
 
-print('CLIENT CONFIG',client_config)
+
 consumer = Consumer(client_config)
 
 running = True
@@ -81,7 +83,6 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
 
         # turn into numpy array
         results = np.array(results)
-        print('RESULTS', results)
         
         # {'default': 0, 'fire': 1, 'smoke': 2}
         labels = ['default', 'fire', 'smoke']
@@ -116,9 +117,7 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
             results = model(image_path)
         if image_data:
             results = model(image_data)
-            print('iiiii')
         labels = {0: u'__background__', 1: u'fire', 2: u'others',3: u'smoke'}
-        print('RES',results[0].boxes.boxes)
         result_image_data = None
         if image_path:
             result_image_data = plot_results(results, folder_path='../results/fire_pred/', image_path=image_path, labels=labels, result_name = 'fire_pred_' + str(counter) + '.jpg', save_image=False, return_image=True)
@@ -178,9 +177,8 @@ try:
                 raise KafkaException(msg.error())
         else:
             #msg = msg.value().decode('utf-8')
-            print('MESSAGE RECEIVED')
             msg_json = json.loads(msg.value())
-            print('MESSAGE : ', msg_json)
+            print('MESSAGE RECEIVED IN FIRE DETECT SERVER', msg_json)
             predict_fire(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
 
             

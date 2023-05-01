@@ -26,10 +26,9 @@ COUNTER = 0
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
-del client_config['message.max.bytes']
-
 client_config['group.id'] = 'foo'
-print('CLIENT CONFIG',client_config)
+client_config['message.max.bytes'] = 32000000
+client_config['fetch.message.max.bytes'] = 32000000
 consumer = Consumer(client_config)
 
 
@@ -61,7 +60,6 @@ def predict_person(image_path = None, image_data = None):
         plot_results(results, folder_path='../results/person_detect/',image_data=image_data, result_name = 'person_pred_' + str(COUNTER) + '.jpg')
 
     for p in person_imgs:
-        print('PERSON IMAGE TYPE', type(p))
         p.save('upload.jpg')
 
         file_id = driveAPI.FileUpload('upload.jpg', name = 'person_detect' + str(COUNTER) + '.jpg', folder_id='1j2-8EdcL2wJ4xPZ9-HZclZy0yV6WDllS')
@@ -112,7 +110,7 @@ try:
         else:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
-            print(msg_json)
+            print('MESSAGE RECEIVED IN PERSON DETECT SERVER : ',msg_json)
             
             predict_person(image_data = getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
 finally:

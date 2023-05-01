@@ -39,6 +39,10 @@ def load_model():
         print('UNZIPPING...')
         patoolib.extract_archive('./efficientnetb3_model/model.part1.rar', outdir='./efficientnetb3_model/')
 
+    for path in os.listdir('./efficientnetb3_model'):
+        if path.endswith('.h5'):
+            model_name = path
+
     return tf.keras.models.load_model('./efficientnetb3_model/' + model_name)
 
 def predict(model, image_path):

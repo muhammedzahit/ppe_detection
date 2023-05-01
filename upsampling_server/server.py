@@ -12,7 +12,7 @@ from fsrcnn import load_model, upscale_image
 
 ANIME_4K = 'anime4k'
 FSRCNN = 'fsrcnn'
-FSRCNN_SCALE = 4
+FSRCNN_SCALE = 2
 UPSAMPLING_MODE = FSRCNN
 
 #CONNECT TO KAFKA
@@ -28,12 +28,13 @@ env_config = read_env('../ENV.txt')
 SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 
-del client_config['message.max.bytes']
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'upsampling_server'
+client_config['message.max.bytes'] = 32000000
+client_config['fetch.message.max.bytes'] = 32000000
 
-print('CLIENT CONFIG',client_config)
+
 consumer = Consumer(client_config)
 
 running = ENABLE_UPSAMPLING
@@ -92,7 +93,7 @@ try:
         else:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
-            print('MESSAGE RECEIVED', msg_json)
+            print('MESSAGE RECEIVED IN UPSAMPLING SERVER : ', msg_json)
             upsample_image(image_data = getImageDataFromDriveFileId(driveAPI, msg_json['file_id']))
 
             

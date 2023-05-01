@@ -24,8 +24,10 @@ driveAPI = DriveAPI('../credentials.json')
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'cigaratte_detect_server'
+client_config['message.max.bytes'] = 32000000
+client_config['fetch.message.max.bytes'] = 32000000
 
-print('CLIENT CONFIG',client_config)
+
 consumer = Consumer(client_config)
 
 running = True
@@ -105,7 +107,7 @@ try:
         else:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
-            print('MESSAGE RECEIVED : ', msg_json)
+            print('MESSAGE RECEIVED IN CIGARETTE DETECT SERVER : ', msg_json)
 
             predict_smoker(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey=msg_json['file_id'])
 

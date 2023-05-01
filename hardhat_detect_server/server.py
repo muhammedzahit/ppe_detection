@@ -21,8 +21,10 @@ producer = Producer(client_config)
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'hardhat_detect_server'
+client_config['message.max.bytes'] = 32000000
+client_config['fetch.message.max.bytes'] = 32000000
 
-print('CLIENT CONFIG',client_config)
+
 consumer = Consumer(client_config)
 
 # check hardhat_detect folder exists in results folder
@@ -55,7 +57,6 @@ def predict_hardhat(image_path = None, image_data = None):
     if image_data:
         results = model(image_data)
     labels = {0: u'__background__', 1: u'helmet', 2: u'vest',3: u'head'}
-    print('RES',results[0].boxes.boxes)
     result_image_data = None
     if image_path:
         result_image_data = plot_results(results, folder_path='../results/hardhat_detect/', image_path=image_path, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=True, return_image=True)
@@ -112,8 +113,7 @@ try:
         else:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
-            print('IMAGE RECEIVED')
-            print('MESSAGE : ', msg_json)
+            print('MESSAGE RECEIVED IN HARDHAT DETECT SERVER: ', msg_json)
 
             predict_hardhat(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
 
