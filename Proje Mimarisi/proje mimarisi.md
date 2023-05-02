@@ -2,7 +2,7 @@
 
 ## 1. Projenin Genel Mimarisi
 
-![Proje Mimarisi](GenelSema.png)
+![Proje Mimarisi](resimler/GenelSema.png)
 
 Projenin genel mimarisini yukarıdaki şekilde görebilirsiniz. Projede 3 ana modül bulunmaktadır. Bunlar; Derin Öğrenme Modellerinin Çalıştırıldığı Modül, yapay zeka çıktıları ve sisteme yüklenen resim verilerinin bulut üzerinde saklandığı Veritabanı Modülü, kullanıcın resim verilerini ekosisteme yükleyebildiği ve tahmin sonuçları gözlemleyebildiği Kullanıcı Arayüzü Modülüdür.
 
@@ -35,7 +35,7 @@ Yapay zeka modelleri Consumer olarak bağlı oldukları başlıktan mesaj aldık
 
 ### 2.1 Person Detection Modeli
 
-![Person Detect 1](personDetect1.png)
+![Person Detect 1](resimler/personDetect1.png)
 
 * Person Detection AI modeli önce Consumer(Tüketici) olarak bağlı olduğu 'rawImage' başlığından mesaj alır. Aldığı mesaj içerisindeki 'File_ID' değerini kullanarak Resim Veritabanı'na sorgu atar ve resim verisini alır.
 
@@ -43,7 +43,7 @@ Yapay zeka modelleri Consumer olarak bağlı oldukları başlıktan mesaj aldık
 
 * Model tahmin yaparken Threshold değerini geçemeyen tahminlerin sonuçlarını eler. Bu sayede yanlış tahminlerin önüne geçer.
 
-![Person Detect 2](personDetect2.png)
+![Person Detect 2](resimler/personDetect2.png)
 
 * Resmin içerisindeki tespit ettiği her kareyi Image Database Server'a kaydeder ve Database Server'dan kaydettiği her resim için unique(benzersiz) bir File_ID değeri alır.
 
@@ -455,7 +455,7 @@ finally:
 
 ### 2.2 Image Upscaling AI Modeli
 
-![Upscaling 1](upscaling1.png)
+![Upscaling 1](resimler/upscaling1.png)
 
 * Bu model sistemin çalışması için gerekli bir model değildir. Super Resolution teknikleriyle resimlerin kalitesi yükseltilmesi ve böylece yapay zeka modellerini daha doğru sonuçlar üretmesi amaçlanmıştır. Fakat upscaling işlemi zaman açısından ekosistemimize ek bir maliyet oluşturur. Bu nedenle proje yöneticisi isterse bu modeli çalıştırmayabilir. 
 
@@ -463,7 +463,7 @@ finally:
 
 * Model, bir mesaj aldığında bu kimliğe göre Image Database Server'a sorgu atar ve resim verisini elde eder. Bu resim verisi, modelin girdisi olarak kullanılır ve model tarafından yüksek çözünürlüklü bir görüntü oluşturulur. Yüksek çözünürlüklü görüntü Super Resolution algoritmaları içerisinde en hızlı çalışan modellerden FSRCNN ya da Anime_4k algoritmaları ile oluşturulur. Bu algoritmalar diğer Super Resolution algoritmalarına göre daha hızlı çalıştığı için tercih edilmiştir. Anime_4k algoritması FSRCNN'e göre daha hızlı çalışır ama daha kötü görüntü kalitesi üretir. Karar yine proje yöneticisine bırakılmıştır. Hızdan kazanmak mı yoksa görüntü kalitesinden ödün vermek mi istenir?
 
-![upscale2](upscaling2.png)
+![upscale2](resimler/upscaling2.png)
 
 * Oluşturulan yüksek çözünürlüklü görüntü, Image Database Server'a kaydedilir ve dosya kimliği Kafka mesajına eklenerek 'upscaledPersonImage' başlığına gönderilir. Bu başlık, 'upscaledPersonByte' başlığından gelen mesajları içerir. Bu mesajlar, Google Drive'a yüklenmiş bir görüntünün dosya kimliğini içerir.
 
@@ -570,11 +570,11 @@ finally:
 
 * ResNet50 Modeli kullanılarak eğitim gerçekleştirilmiştir. Model Performansı:
 
-![Fire ResNet50](fire_resnet50.png)
+![Fire ResNet50](resimler/fire_resnet50.png)
 
 * Model daha sonra VGG16 Modeli kullanılarak eğitilmiştir. Model Performansı:
 
-![Fire VGG16](fire_vgg16.png)
+![Fire VGG16](resimler/fire_vgg16.png)
 
 * Model test edildiğinde performansının düşük olduğu görülmüştür. Bu sebeple Object Detection(YOLOv8) yaklaşımına geçilmiştir. Aynı zamanda veri setinin yetersiz olduğu da varsayılmış ve yeni bir veri seti oluşturulmuştur. Bu veri seti: https://www.kaggle.com/datasets/muhammetzahitaydn/fire-smoke-detection-dataset 
 
@@ -582,17 +582,17 @@ finally:
 
 * Yeni oluşturduğumuz veri seti toplam 20962 resimden oluşuyor. Her resimde yangın, duman içeren kareler ayrı txt dosyalarında etiketlenmiş durumda. Aynı zamanda modele yangın veya duman ile alakalı olmayan kareler ‘others’ etiketiyle tanıtıldı. Veri setini güçlendirmek için kask-yelek veri setimizden yaklaşık 2500 veri ‘others’ etiketiyle veri setine katıldı.
 
-![Dataset Fire](Fire_Smoke_Detection_Dataset.png)
+![Dataset Fire](resimler/Fire_Smoke_Detection_Dataset.png)
 
-![Fire YOLOv8](fire_yolov8.png)
+![Fire YOLOv8](resimler/fire_yolov8.png)
 
 #### 2.3.2 Model Mimarisi
 
-![fire1](fire1.png)
+![fire1](resimler/fire1.png)
 
 * Fire-Smoke Detection modeli 'rawImage' Kafka Başlığına(Topic) bağlanır. Bu başlıktan bir mesaj alması durumunda mesajdaki 'File_ID' bilgisini kullanarak Google Drive'dan resmi indirir. Resim indirildikten sonra resim üzerinde YOLOv8 modeli çalıştırılır. Modelin çıktısı olarak resim üzerindeki yangın ve dumanların konumları ve sınıfları elde edilir.
 
-![fire2](fire2.png)
+![fire2](resimler/fire2.png)
 
 * Tahmin sonucu elde edilen resim Image Database Server'a gönderilir ve 'File_ID' etiketi Server'dan alınır. Bu etiket 'fireResults' Kafka Başlığına(Topic) gönderilir. Bu başlıkta 'File_ID' bilgisi ile birlikte resim üzerindeki yangın ve dumanların konumları ve sınıfları gönderilir. Aynı zamanda resmin içinde yangın varsa mesaj içerisindeki 'Success' değeri 'False' olarak gönderilir. Yangın yoksa 'True' olarak gönderilir. 
 
@@ -894,7 +894,7 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
 
 #### 2.4.2 Age Detection AI Model Mimarisi
 
-![Age Detection AI Model Mimarisi](age1.png)
+![Age Detection AI Model Mimarisi](resimler/age1.png)
 
 * Upsampling AI modelinin yani SR(Super Resolution) işleminin açık olduğu durumda 'upsampledPersonImage' Kafka Topic(Başlığına) bağlanır. Açık olmadığı durumda ise 'cropperPersonImage' Kafka Başlığına(Topic) bağlanır ve mesaj bekler. Mesaj geldiğinde, mesajın içindeki 'File_ID' bilgisine göre Image Database Server'a sorgu atar ve sunucuda ID'si eşleşen görüntüyü alır.
 
@@ -904,9 +904,9 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
 
 * Son olarak, yapılan yaş tahmini Kafka 'ageResults' başlığına gönderilir. 'File_ID' olarak ise tahminin en başında alınan görüntünün ID'si gönderilir.
 
-![Age Model Loss](age_loss.png)
+![Age Model Loss](resimler/age_loss.png)
 
-![Gender Model Loss](gender_loss.png)
+![Gender Model Loss](resimler/gender_loss.png)
 ### 2.5 Cigarette Smoker AI Modeli
 
 #### 2.5.1 Cigarette Smoker AI Modeli Eğitim Aşamaları
@@ -915,17 +915,17 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
 
 * Bu veriseti MobileNetv2 ile eğitilmiştir.
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker1.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker1.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker2.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker2.png)
 
 * Model validation setinde ve aynı zamanda projede test ettiğimizde kötü bir performans sağlamıştır.
 
 * Aynı veriseti kullanılarak EfficientNetB3 modeli ile eğitim yapılmıştır.
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker3.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker3.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker4.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker4.png)
 
 * Validation ve Test setinde iyi bir sonuç vermiştir fakat projede test ettiğimizde işçi fotoğrafları doğru bir şekilde sınıflandırılmamıştır. Çoğu işçi fotoğrafını 'sigar içiyor' olarak tahmin etmiştir.
 
@@ -951,41 +951,41 @@ Etiketine sahip verilerden oluşmaktadır. Tüm veri seti 5426 ‘Sigara-İçen�
 
 -	Oluşturulan veri setine göre EfficientNetB3 performansı:
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker7.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker7.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker8.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker8.png)
 
 * YOLO-Classifier, EfficientNetV2S, EfficientNetV2B3, ConvNeXtTiny modelleri ile eğitim yapılmış ve model performansları karşılaştırılmıştır.
 
 * YOLO-Classifier:
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker9.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker9.png)
 
 * EfficientNetV2S:
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker10.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker10.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker11.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker11.png)
 
 * EfficientNetV2B3:
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker12.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker12.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker13.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker13.png)
 
 * ConvNeXtTiny:
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker14.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker14.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker15.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker15.png)
 
 * EfficientNetB3 modeli 12.3M, EfficientNetV2B3 14.5M, EfficientNetV2S 21.6M, ConvNeXtTiny 28.6M parametreye sahiptir. Yukarıda açıkladığımız sonuçlara göre sigara tespit modeli hem işlem hacmi küçüklüğü hem de başarı oranı açısından en uygun model EfficientNetB3 olmaktadır.
 
-![dataset smoking](Smoking_Detection_Dataset.png)
+![dataset smoking](resimler/Smoking_Detection_Dataset.png)
 
 #### 2.5.2 Cigarette Smoker AI Model Mimarisi
 
-![Cigarette Smoker AI Model Mimarisi](smoker16.png)
+![Cigarette Smoker AI Model Mimarisi](resimler/smoker16.png)
 
 * Cigarette Smoker AI Modeli, Upsampling AI modelinin yani SR(Super Resolution) işleminin açık olduğu durumda 'upsampledPersonImage' Kafka Topic(Başlığına) bağlanır. Açık olmadığı durumda ise 'cropperPersonImage' Kafka Başlığına Consumer(Tüketici) olarak bağlanır ve mesaj bekler. Gelen mesajda bulunan 'File_ID' değerine göre Image Database Server üzeriden ilgili resim dosyası çekilir. Bu dosya Sigara İçen-İçmeyen etiketli toplam 9004 resimlik veri seti ile eğitilmiş EfficientNetB3 Transfer Learning modeline girdi olarak verilir ve sonuç beklenir.
 
@@ -1125,7 +1125,7 @@ finally:
 
 * Oluşturduğumuz yeni veri seti 23700 resimden oluşuyor. Veri setinde toplam 57860 'Hardhat', 100024 'Vest', 124826 'Head' etiketi bulunuyor. Veri seti linki : https://www.kaggle.com/datasets/muhammetzahitaydn/hardhat-vest-dataset-v3 
 
-![dataset hardhat](Hardhat_Dataset.png)
+![dataset hardhat](resimler/Hardhat_Dataset.png)
 
 * Modeli eğitmek için ilk önce Facebook DETR modeli kullanıldı.
 
@@ -1133,9 +1133,9 @@ finally:
 
 * Model dışarıdan 100 veri ile test edildiğinde sonuçlar:
 
-![hardhat1](hardhat1.png)
+![hardhat1](resimler/hardhat1.png)
 
-![hardhat2](hardhat2.png)
+![hardhat2](resimler/hardhat2.png)
 
 - Model çok ağır çalışıyor. Bir resmi tahmin etmesi 2 saniyeden uzun sürüyor. Bizim projemiz için kesinlikle uygun değil.
 - Kask tahmin oranları iyi sayılabilir. Yelek tahminini hiç başaramamış. Kask takmayan insanları yarı yarıya tahmin edebiliyor.
@@ -1143,33 +1143,31 @@ finally:
 
 * Modeli eğitmek için ikinci olarak Faster R-CNN modeli kullanıldı.
 
-* ????
-
 * Modeli eğitmek için üçüncü olarak YOLOv8 modeli kullanıldı.
 
-![hardhat3](hardhat3.png)
+![hardhat3](resimler/hardhat3.png)
 
-![hardhat4](hardhat4.png)
+![hardhat4](resimler/hardhat4.png)
 
 -	Yolov8s ve Yolov8m modellerini performansı birbirine yakın ama biz hızdan kazanmak için yolov8s modelini seçiyoruz.
 -	Model hızlı çalışmakta bir resmi tahmin etmesi 200-300 milisaniye alıyor.
 -	Test Veri seti Başarı Oranları (100 Resim İncelendi) :
 
-![hardhat5](hardhat5.png)
+![hardhat5](resimler/hardhat5.png)
 
-![hardhat6](hardhat6.png)
+![hardhat6](resimler/hardhat6.png)
 
 * Hem hız hem doğruluk açısından YOLOv8 modeli en iyi modeldir. Bu modeli kullanacağız.
 
 #### 2.6.2 Hardhat-Vest Detect AI Model Mimarisi
 
-![hardhat7](hardhat7.png)
+![hardhat7](resimler/hardhat7.png)
 
 - Upsampling AI modelinin yani SR(Super Resolution) işleminin açık olduğu durumda 'upsampledPersonImage' Kafka Topic(Başlığına) bağlanır. Açık olmadığı durumda ise 'cropperPersonImage' Kafka Topic(Başlığına) bağlanır ve mesaj bekler. 
 
 * Kafka mesajı geldiğinde mesajın içindeki 'File_ID' bilgisine göre Image Database Server üzerinden resim çekilir. Çekilen resim Kask-Yelek veri seti ile eğitilmiş YOLOv8 modeline girdi olarak verilir ve sonuç beklenir.
 
-![hardhat8](hardhat8.png)
+![hardhat8](resimler/hardhat8.png)
 
 * Sonuç verisi Image Database Server'a yüklenir ve Upload işleminin sonunda sunucudan 'File_ID' değişkeni beklenir. Son olarak 'File_ID' değişkeni 'hardhatResults' Başlığına mesaj olarak gönderilir.
 
@@ -1345,17 +1343,17 @@ finally:
 
 * Bu modül, Flask kütüphanesi kullanılarak geliştirilmiştir. Flask, Python programlama dili ile web uygulamaları geliştirmek için kullanılan bir kütüphanedir.
 
-![ui home page](ui_home_page.png)
+![ui home page](resimler/ui_home_page.png)
 
-![ui image upload](ui_image_upload_page.png)
+![ui image upload](resimler/ui_image_upload_page.png)
 
-![ui live stream](ui_live_streaming_page.png)
+![ui live stream](resimler/ui_live_streaming_page.png)
 
-![ui monitoring](ui_monitoring_page.png)
+![ui monitoring](resimler/ui_monitoring_page.png)
 
-![ui monitoring](ui_monitoring_page_2.png)
+![ui monitoring](resimler/ui_monitoring_page_2.png)
 
-![ui 1](ui_1.png)
+![ui 1](resimler/ui_1.png)
 
 * Server Listener, Kafka mesaj kuyruğundan gelen sonuçları dinler ve sonuçları Flask Sunucusuna POST isteği ile gönderir. Bu istek, "http://FLASK_SERVER_IP:FLASK_SERVER_PORT/updateResults" adresine gönderilir. 
 
@@ -1708,3 +1706,37 @@ threading.Thread(target=thread_type_2, args=(consumer_stream, 'stream_results'))
 * Multithreading ile programlar, işlemciyi daha verimli kullanarak, bir işlem yaparken diğer işlemlerin tamamlanmasını beklemek yerine aynı anda birden fazla işlem yapabilirler. Bu sayede programların işlem süresi azaltılabilir ve daha hızlı bir şekilde sonuç alınabilir.
 
 * Birden fazla Kafka topic'e abone olan ve aldığı mesajları işleyen thread'ler yaratılmıştır. Ayrıca, bir diğer thread, aldığı görüntüleri sıkıştırarak Kafka'ya göndermektedir. Bu sayede, birçok işlemi aynı anda yapabilen bir yapı oluşturulmuştur.
+
+# 5. Sentetik Veri
+
+* Son yıllarda Text-to-Image Generator AI modelleri ve Oyun Motorları(Game Engines) gerçeğe yakın veriler üretmeye başlamıştır. Örneğin NASA gibi uzay kuruluşları Karadelik gibi gözlemlenmesi zor nesnelerin simülasyonlarını elde etmek için oyun motorlarının 3D grafik kütüphanelerini kullanmaktadır. Bu simülasyonlardan yola çıkarak gözlemlerini gerçek ile ne kadar benzer olduğunu test etmektedirler.
+
+* Bir diğer örnek olarak NVIDIA Omniverse Replicator verilebilir. Bu yazılım, yapay zeka ağlarının üretimini hızlandırmak için tasarlanmıştır. Bu yazılım, gerçek dünyadaki nesnelerin görüntülerini alarak, bu görüntülerin 3D modellerini oluşturur. Bu 3D modelleri, yapay zeka ağlarına veri olarak sunar. Bu sayede, yapay zeka ağları, gerçek dünyadaki nesnelerin görüntülerini kullanarak, bu nesnelerin 3D modellerini oluşturabilir.
+
+* Unity Technologies aynı zamanda kendi yapay zeka modellerini eğitmek için kendi oyun motoru aracılığıyla üretilen sentetik verileri kullanmaktadır.
+
+* Projemizde sentetik verilerin gerçek-hayat testlerinde nasıl bir başarı gösterdiğini ölçmek için bir deney tasarladık. İlk önce sentetik verilerden oluşan bir veri seti hazırladık. Veri setinde Rockstar Advanced Game Engine motoru kullanılarak oluşturulmuş 300 veri; Midjourney, Bing Image Generator, Stable Diffisuion ve Lexica Aperture Text-to-Image Generator AI modelleri ile oluşturulmuş 765 veri bulunmakta. Toplamda 1065 sentetik veri oluşturduk. Veri setimizdeki çoğu veri kask-yelek takan gerçekçi-fotorealistic insanları içermektedir.
+
+![sentetik veri 1](resimler/sentetik_veri_1.png)
+
+![sentetik veri 2](resimler/sentetik_veri_2.png)
+
+# 6. Sonuç
+
+* Projemizde İş Sağlığı ve Güvenliği Uygulamalarını kamera görüntülerine göre kontrol eden bir ekosistem tasarlamayı amaçladık. Tasarladığımız ekosistemde en çok dikkat ettiğimiz nokta hız oldu. Çünkü eğer hızlı bir çalışan sisteme sahip değilsek bu aynı zamanda Gerçek-Zamanlı bir kontrol sistemi olmadığımızı gösterir. İş Sağlığı ve Güvenliği Uygulamalarının gerçek zamanlı olarak izlenmesi ve yanlış davranışlara hemen müdahele edilmesi hayati önem taşımaktadır.
+
+* Projemiz, İş Sağlığı ve Güvenliği Uygulamalarından ; Kask-Yelek Tespiti, Sigara İçen İşçi Tespiti, Çalışma Sahasına Giren Çocukların Tespiti ve Çalışma Sahası İçerisindeki Yangın-Duman Tespiti olmak üzere 4 farklı uygulamayı içermektedir. Bu uygulamaların gerçeklenmesi için toplam 6 yapay zeka modeli çalışmaktadır. Bu yapay zeka modelleri; İnsan Tespit Modeli, Yangın-Duman Tespit Modeli, Sigara Tespit Modeli, Kask-Yelek Tespit Modeli, Yüz verilerine dayalı Yaş Tespit Modeli ve SR(Super Resolution) Modelidir.
+
+* Bu modeller Apache Kafka aracılığıyla birbirleri ile haberleşmektedir. Aynı zamanda Kafka aracılığıyla Image Database Server ve User Interface(Kullanıcı Arayüzü) ile de haberleşmektedirler. Bu sayede, birbirleri ile haberleşen bu modeller, birbirlerinin çalışmasını engellemeden, aynı anda çalışabilmektedirler.
+
+* Apache Kafka projemizin bir nevi orkestra şefi görevini üstlenmektedir. Projedeki modüller arasında hızlı ve hatasız mesaj iletimi sağlamakta aynı zamanda yatay-ölçeklenebilir bir yapı sunmaktadır. Bu sayede, projemizdeki modüllerin sayısı arttıkça, Apache Kafka sayesinde, projemizdeki modüller arasındaki mesaj iletimi hızlı ve hatasız bir şekilde gerçekleştirilebilmektedir.
+
+* Projeyi gerçekleştirirken tecrübe ettiğimiz bir diğer önemli konu da zaman yönetimi oldu. Hızlı bir ekosistem kurmak için sadece Yapay-Zeka Modellerinizin hızlı çalışması yeterli olmamaktadır. Nitekim projemizde yapay zeka modellerimizin tamamı gelen veriyi 250 ms'den düşük hızlarda işleyebilmekte ve sonuç üretebilmektedir. Önemli olan bu sonuçları birbirleri ile haberleştirmek ve bu sonuçları kullanıcıya sunmaktır.
+
+* Bu konuda Server Upload hızınız, Server Download hızınız, Kullandığınız Upload yöntemi gibi bir çok etmen için içine girmektedir. Örneğin projede kullandığımız Google Drive API küçük bir dosyayı upload etmek için 500 milisaniyeden fazla süre harcamaktadır. Bu işlem yüzünden yapay zeka modelleriniz hızlı olsa bile upload işlemini beklemek zorunda kalıyorsunuz. Ama Drive API aynı zamanda bize sonuçların inşaat sahası dışından da görüntülenebilmesini sağlıyor.
+
+* Eğer sonuçlarınız inşaat sahası dışından görüntülemek istemiyorsanız ve iş güvenliği elemanınız inşaat sahası içerisinde çalışıyorsa daha hızlı bir yöntem olarak FTP server da kullanabilirsiniz.
+
+* Sonuç olarak, yapay zeka modellerini birlikte çalıştığı bu kadar büyük bir ekosistem tasarlarken göz önünde bulundurmanız gereken bir çok etmen var. Yapay zeka modellerinizin daha doğru mu çalışmasını istiyorsunuz yoksa daha hızlı mı? Sonuçları iş sahası dışında da görüntüleyecek misiniz ? İş güvenliği elemanınız inşaat sahası içerisinde mi çalışacak yoksa dışında mı ? İş sahası içerisinde kameraları ana makinenize nasıl bağlayacaksınız ? Upload,Download hızlarınız ne kadar? Maliyetten kaçınmak için hangi yöntemleri kullanacaksınız ? gibi bir çok soru ile karşılaşacaksınız. Bu soruların cevaplarını bulmak için projenizi tasarlarken çok fazla deneme yanılma yapmanız gerekecektir. Bu yüzden projenizi tasarlarken zaman yönetimine dikkat etmeniz gerekmektedir.
+
+![kaynak yonetimi](resimler/kaynak_yonetimi.png)
