@@ -933,9 +933,9 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
 
 * Eski Verilere 2605 veri daha eklenmiştir böylece eğitimde kullanılan veri sayısı 5880 olmuştur. Yeni eklenen veriler, kask-yelek veri setinden eklendiği için ‘not-smoking’ etiketine sahiptir. Yeni eklenen veriler özellikle ‘not-smoking’ üzerinde modelin eski versiyonuna göre başarıyı arttırmıştır.
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker5.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker5.png)
 
-![Cigarette Smoker AI Modeli Eğitim Aşamaları](smoker6.png)
+![Cigarette Smoker AI Modeli Eğitim Aşamaları](resimler/smoker6.png)
 
 * Son eklediğimiz veriler ile eğitim setimiz 3884 sigara içmeyen, 1996 sigara içen insana ait toplam 5880 fotoğraftan oluşuyordu. Model, veri seti içerisindeki test verilerinde iyi bir başarı gösterirken, dışarıdan eklediğimiz yeni verilerde beklenen başarıyı gösteremiyordu. 
 
