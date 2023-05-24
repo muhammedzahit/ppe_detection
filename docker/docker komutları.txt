@@ -1,3 +1,6 @@
+docker pull bitnami/zookeeper:3.7.1-debian-11-r108
+docker pull bitnami/kafka:3.2.3-debian-11-r68
+
 # TOPIC OLUŞTURMA
 
 docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic TOPIC_ISIM
