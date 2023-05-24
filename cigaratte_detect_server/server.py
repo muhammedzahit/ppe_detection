@@ -8,11 +8,12 @@ import mobilenetv2_model
 import efficientnetb3_model
 import os
 import tensorflow as tf
+import shutil
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
 MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' # 'EFFICIENTNETB3'
 
 # CONNECT TO KAFKA
@@ -20,7 +21,9 @@ client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
 # Connect to Google Drive API
-driveAPI = DriveAPI('../credentials.json')
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'cigaratte_detect_server'
@@ -63,13 +66,21 @@ def predict_smoker(image_path = None, image_data = None, msgKey = None):
         prediction = efficientnetb3_model.predict(model, image_path)
     counter += 1
 
-    if SAVE_RESULTS:
-        image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
     
-    # send results to kafka
-    value = json.dumps({'prediction': prediction, 'key': 'cigaratte_pred_' + str(counter) + '.jpg', 'file_id': msgKey})
-    print('SENDING VALUE TO KAFKA: ', value)
-    producer.produce('smokerResults', key=msgKey, value=value)
+    if ENABLE_DRIVE_UPLOAD:
+        # send results to kafka
+        value = json.dumps({'prediction': prediction, 'key': 'cigaratte_pred_' + str(counter) + '.jpg', 'file_id': msgKey})
+        print('SENDING VALUE TO KAFKA: ', value)
+        producer.produce('smokerResults', key=msgKey, value=value)
+    else:
+        if image_data:
+            image_data.save('../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
+        if image_path:
+            # copy image to results folder with shutil
+            shutil.copy(image_path, '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
+        value = json.dumps({'prediction': prediction, 'key': 'cigaratte_pred_' + str(counter) + '.jpg', 'path' : '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg', 'file_id': msgKey})
+        print('SENDING VALUE TO KAFKA: ', value)
+        producer.produce('smokerResults', key=msgKey, value=value)
     
     if SENDING_METHOD == 'flush':
         producer.flush()
@@ -109,8 +120,10 @@ try:
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED IN CIGARETTE DETECT SERVER : ', msg_json)
 
-            predict_smoker(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey=msg_json['file_id'])
-
+            if ENABLE_DRIVE_UPLOAD:
+                predict_smoker(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey=msg_json['file_id'])
+            else:
+                predict_smoker(image_path=msg_json['path'], msgKey=msg_json['key'])
             
 finally:
     # Close down consumer to commit final offsets.

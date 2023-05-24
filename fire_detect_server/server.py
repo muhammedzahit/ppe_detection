@@ -15,9 +15,10 @@ from ultralytics import YOLO
 
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
+FIRE_RESULTS_FOLDER_DRIVE_ID = env_config['FIRE_RESULTS_FOLDER_DRIVE_ID']
 
 MODEL_TYPE = env_config['FIRE_DETECT_MODEL'] # YOLO or VGG16
 
@@ -44,7 +45,9 @@ elif MODEL_TYPE == 'YOLO':
 
 # Connect Google Drive API
 
-driveAPI = DriveAPI('../credentials.json')
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -88,17 +91,22 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
         labels = ['default', 'fire', 'smoke']
         prediction = labels[results.argmax()]
         print('FIRE PREDICTION: ', prediction)
-        if SAVE_RESULTS:
+           
+        if ENABLE_DRIVE_UPLOAD:
+            # send results to kafka
+            value = json.dumps({'prediction': prediction, 'rawImageKey': msgKey})
+            print('SENDING VALUE TO KAFKA: ', value)
+            producer.produce('fireResults', key=msgKey, value=value)
+        else:
             # check fire_detect_server folder in results folder
             if not os.path.exists('../results/fire_detect_server'):
                 os.mkdir('../results/fire_detect_server')
             image_data.save('../results/fire_detect_server/{}_{}.jpg'.format(counter, prediction))
-        
-        # send results to kafka
-        value = json.dumps({'prediction': prediction, 'rawImageKey': msgKey})
-        print('SENDING VALUE TO KAFKA: ', value)
-        producer.produce('fireResults', key=msgKey, value=value)
-        
+            # store path and prediction in value variable
+            value = json.dumps({'prediction': prediction, 'path': '../results/fire_detect_server/{}_{}.jpg'.format(counter, prediction)})
+            # send results to kafka
+            producer.produce('fireResults', key=msgKey, value=value)
+
         if SENDING_METHOD == 'flush':
             producer.flush()
         if SENDING_METHOD == 'poll':
@@ -127,24 +135,30 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
         if(type(result_image_data) == np.ndarray):
             result_image_data = Image.fromarray(result_image_data)
         
-        if SAVE_RESULTS:
-            if not os.path.exists('../results/fire_detect'):
-                os.mkdir('../results/fire_detect')
-
-            result_image_data.save('../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg')
-        
+       
         counter += 1
         print('PREDICTION', results[0].boxes.boxes)
 
         # save result_image_data to local file
         result_image_data.save('temp.jpg')
         
-        # send result_image_data to google drive
-        file_id = driveAPI.FileUpload('temp.jpg', 'fire_detect' + str(counter) + '.jpg', '1U6KbeRq9htCU8zMy-K0iU81WORqkwAO0')
+        if ENABLE_DRIVE_UPLOAD:
+            # send result_image_data to google drive
+            file_id = driveAPI.FileUpload('temp.jpg', 'fire_detect' + str(counter) + '.jpg', FIRE_RESULTS_FOLDER_DRIVE_ID)
 
-        # SEND RESULTS TO KAFKA
-        value_ = json.dumps({'file_id' : file_id, 'key' : 'fire_detect' + str(counter) + '.jpg'})
-        producer.produce('fireResults', key=str(counter), value=value_)
+            # SEND RESULTS TO KAFKA
+            value_ = json.dumps({'file_id' : file_id, 'key' : 'fire_detect' + str(counter) + '.jpg'})
+            producer.produce('fireResults', key=str(counter), value=value_)
+        else:
+            if not os.path.exists('../results/fire_detect'):
+                os.mkdir('../results/fire_detect')
+
+            result_image_data.save('../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg')
+            # store path and prediction in value variable
+            value = json.dumps({'prediction': 'fire', 'path': '../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg'})
+            # send results to kafka
+            producer.produce('fireResults', key=msgKey, value=value)
+
         
         if SENDING_METHOD == 'flush':
             producer.flush()
@@ -179,7 +193,10 @@ try:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value())
             print('MESSAGE RECEIVED IN FIRE DETECT SERVER', msg_json)
-            predict_fire(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
+            if ENABLE_DRIVE_UPLOAD:
+                predict_fire(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
+            else:
+                predict_fire(image_path=msg_json['path'])
 
             
 finally:

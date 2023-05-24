@@ -11,9 +11,10 @@ import numpy as np
 
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
+HARDHAT_RESULTS_FOLDER_DRIVE_ID = env_config['HARDHAT_RESULTS_FOLDER_DRIVE_ID']
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -41,7 +42,9 @@ model('test.png')
 counter = 0
 
 # Connect Google Drive API
-driveAPI = DriveAPI('../credentials.json')
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 
 def predict_hardhat(image_path = None, image_data = None):
@@ -59,28 +62,32 @@ def predict_hardhat(image_path = None, image_data = None):
     labels = {0: u'__background__', 1: u'helmet', 2: u'vest',3: u'head'}
     result_image_data = None
     if image_path:
-        result_image_data = plot_results(results, folder_path='../results/hardhat_detect/', image_path=image_path, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=True, return_image=True)
+        result_image_data = plot_results(results, folder_path='../results/hardhat_detect/', image_path=image_path, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=False, return_image=True)
     else:
-        result_image_data = plot_results(results, folder_path='../results/hardhat_detect/' ,image_data=image_data, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=True, return_image=True)
+        result_image_data = plot_results(results, folder_path='../results/hardhat_detect/' ,image_data=image_data, labels=labels, result_name = 'hardhat_pred_' + str(counter) + '.jpg', save_image=False, return_image=True)
     
     # save ndarray image data to jpg file
     im = Image.fromarray(result_image_data)
     im.save('temp.jpg')
 
-    if SAVE_RESULTS:
+    counter += 1
+    
+    if ENABLE_DRIVE_UPLOAD:
+        # SEND RESULTS TO GOOGLE DRIVE
+        file_id = driveAPI.FileUpload('temp.jpg', 'hardhat_pred_' + str(counter) + '.jpg', folder_id=HARDHAT_RESULTS_FOLDER_DRIVE_ID)
+
+        # SEND RESULTS TO KAFKA
+        value_ = {'file_id' : file_id, 'key' : 'hardhat_pred_' + str(counter) + '.jpg'}
+        producer.produce('hardhatResults', key=str(counter), value=json.dumps(value_))
+    else:
         if not os.path.exists('../results/hardhat_detect'):
             os.makedirs('../results/hardhat_detect')
 
         im.save('../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg')
+        # store path in value variable
+        value_ = {'path' : '../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg', 'key' : 'hardhat_pred_' + str(counter) + '.jpg'}
+        producer.produce('hardhatResults', key=str(counter), value=json.dumps(value_))
 
-    counter += 1
-
-    # SEND RESULTS TO GOOGLE DRIVE
-    file_id = driveAPI.FileUpload('temp.jpg', 'hardhat_pred_' + str(counter) + '.jpg', folder_id='1Q4sb2KoVRk2jbi-WEHElK47g_09ARdGR')
-
-    # SEND RESULTS TO KAFKA
-    value_ = {'file_id' : file_id, 'key' : 'hardhat_pred_' + str(counter) + '.jpg'}
-    producer.produce('hardhatResults', key=str(counter), value=json.dumps(value_))
 
     if SENDING_METHOD == 'flush':
         producer.flush()
@@ -115,8 +122,10 @@ try:
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED IN HARDHAT DETECT SERVER: ', msg_json)
 
-            predict_hardhat(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
-
+            if ENABLE_DRIVE_UPLOAD:
+                predict_hardhat(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
+            else:
+                predict_hardhat(image_path = msg_json['path'])
             
 finally:
     # Close down consumer to commit final offsets.

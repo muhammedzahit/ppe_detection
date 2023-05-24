@@ -20,13 +20,17 @@ UPSAMPLING_MODE = FSRCNN
 client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
-# Connect to Google Drive
-driveAPI = DriveAPI('../credentials.json')
 
 # READ ENV
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
+UPSCALED_IMAGES_FOLDER_DRIVE_ID = env_config['UPSCALED_IMAGES_FOLDER_DRIVE_ID']
+
+# Connect to Google Drive
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
@@ -42,9 +46,7 @@ num = 0
 
 # FSRCCN MODEL
 fsrcnn_model = load_model(scale = FSRCNN_SCALE)
-
 counter = 0
-SAVE_RESULTS = True
 
 def upsample_image(image_data):
     global counter
@@ -60,13 +62,23 @@ def upsample_image(image_data):
         upscale_image(image_path = 'temp.jpg', scale = FSRCNN_SCALE, model = fsrcnn_model)
         output_file = 'sr.png'
 
-    # save output file to drive
-    file_id = driveAPI.FileUpload(filepath=output_file, name='upsampled_' + str(counter) + '.jpg', folder_id='12-WJ1nicQU5DEmpdZohADS-Xm8P9Cy2H')
-    print('FILE SAVED TO DRIVE', file_id)
-    
-    value_ = json.dumps({'file_id' : file_id, 'key' : 'upsampled' + str(counter) + '.jpg'})
+    if ENABLE_DRIVE_UPLOAD:
+        # save output file to drive
+        file_id = driveAPI.FileUpload(filepath=output_file, name='upsampled_' + str(counter) + '.jpg', folder_id=UPSCALED_IMAGES_FOLDER_DRIVE_ID)
+        print('FILE SAVED TO DRIVE', file_id)
+        
+        value_ = json.dumps({'file_id' : file_id, 'key' : 'upsampled' + str(counter) + '.jpg'})
 
-    producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = value_)
+        producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = value_)
+    else:
+        # copy output file to results folder
+        # and check upsampled folder exists in results folder
+        pathlib.Path('../results/upsampled').mkdir(parents=True, exist_ok=True)
+        pathlib.Path('../results/upsampled').joinpath('upsampled_' + str(counter) + '.jpg').write_bytes(open(output_file, 'rb').read())
+        value_ = json.dumps({'path' : '../results/upsampled/upsampled_' + str(counter) + '.jpg', 'key' : 'upsampled' + str(counter) + '.jpg'})
+        producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = value_)
+
+
     producer.flush()
     print(str(datetime.datetime.now()),'IMAGE SENT TO UPSAMPLED_IMAGE_BYTE TOPIC')
     print('---------------------------------')
@@ -94,7 +106,10 @@ try:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED IN UPSAMPLING SERVER : ', msg_json)
-            upsample_image(image_data = getImageDataFromDriveFileId(driveAPI, msg_json['file_id']))
+            if ENABLE_DRIVE_UPLOAD:
+                upsample_image(image_data = getImageDataFromDriveFileId(driveAPI, msg_json['file_id']))
+            else:
+                upsample_image(image_data=Image.open(msg_json['path']))
 
             
 finally:

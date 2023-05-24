@@ -15,7 +15,7 @@ import shutil
 
 
 env_config = read_env('../ENV.txt')
-SAVE_RESULTS = env_config['AI_MODELS_SAVE_RESULTS'] == 'True'
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
 
@@ -45,7 +45,9 @@ client_config = read_ccloud_config('../client.txt')
 producer = Producer(client_config)
 
 # Connect to Google Drive API
-driveAPI = DriveAPI('../credentials.json')
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 # BURAYI HER SERVER ICIN DEGISTIR, ONEMLI !!!!!!!!!!!!!!!!
 client_config['group.id'] = 'age_detect_server'
@@ -67,6 +69,10 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
     global counter
     print('PREDICTING AGE...')
     results = None
+    
+    if image_path is not None: 
+        image_data = cv2.imread(image_path)
+    
     image_data = np.array(image_data)
     #print('RES',results[0].boxes.boxes)
 
@@ -105,19 +111,25 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
             max_age = max(max_age, pred_age)
             print("Prediction: Gender = ", pred_gender," Age = ", pred_age)
 
-            if SAVE_RESULTS:
-                # check age_detect_server folder in results folder
-                if not os.path.exists('../results/age_detect_server'):
-                    os.makedirs('../results/age_detect_server')
-                #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
-                shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
-                #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
-                counter += 1
-        
-    # send result to kafka
-    value = json.dumps({'prediction': max_age, 'file_id': msgKey, 'key' : 'age_detect_server_' + str(counter) + '.jpg'})
-    print('SENDING VALUE TO KAFKA: ', value)
-    producer.produce('ageResults', key=msgKey, value=value)
+    
+    if ENABLE_DRIVE_UPLOAD:
+        # send result to kafka
+        value = json.dumps({'prediction': max_age, 'file_id': msgKey, 'key' : 'age_detect_server_' + str(counter) + '.jpg'})
+        print('SENDING VALUE TO KAFKA: ', value)
+        producer.produce('ageResults', key=msgKey, value=value)
+    else:
+        # check age_detect_server folder in results folder
+        if not os.path.exists('../results/age_detect_server'):
+            os.makedirs('../results/age_detect_server')
+        #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
+        shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
+        #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
+
+        value = json.dumps({'prediction': max_age, 'path' : '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg'})
+        print('SENDING VALUE TO KAFKA: ', value)
+        producer.produce('ageResults', key=msgKey, value=value)
+
+    counter += 1
 
     if SENDING_METHOD == 'flush':
         producer.flush()
@@ -154,8 +166,11 @@ try:
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED IN AGE DETECTION SERVER : ', msg_json)
-            predict_age(image_data= getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey = msg_json['file_id'])
 
+            if ENABLE_DRIVE_UPLOAD:
+                predict_age(image_data= getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey = msg_json['file_id'])
+            else:
+                predict_age(image_path = msg_json['path'], msgKey = str(counter))
             
 finally:
     # Close down consumer to commit final offsets.

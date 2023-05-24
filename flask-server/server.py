@@ -6,13 +6,10 @@ from confluent_kafka import Producer
 from utils import read_env
 from streamPage import gen_frames
 import json
+import os
 
 app = Flask(__name__)
 app.secret_key = 'random'
-
-# CONNECT TO GOOGLE DRIVE
-
-driveAPI = DriveAPI('../credentials.json')
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -26,6 +23,13 @@ COUNTER = 0
 IMAGE_KEY = 0
 IMAGE_DATABASE_URL = env_config['IMAGE_DATABASE_URL']
 SENDING_METHOD = env_config['SENDING_METHOD']
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
+RAW_IMAGES_FOLDER_DRIVE_ID = env_config['RAW_IMAGES_FOLDER_DRIVE_ID']
+
+# CONNECT TO GOOGLE DRIVE
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 @app.route('/')
 def index():
@@ -57,24 +61,44 @@ def imageUploader():
             f = request.files['file'+str(i)]
             data = f.stream.read()
 
-            # save temp image to local
-            with open('temp.jpg', 'wb') as f:
-                f.write(data)
+            if ENABLE_DRIVE_UPLOAD:
 
-            image_key_name = 'image' + str(IMAGE_KEY) + '.jpg'
+                # save temp image to local
+                with open('temp.jpg', 'wb') as f:
+                    f.write(data)
 
-            # upload image to google drive
-            file_id = driveAPI.FileUpload('temp.jpg', image_key_name, folder_id='17noLHuDVES1My9knrGuQAgLVjaTqX-Qq')
-            print('File ID uploaded: ', file_id)
+                image_key_name = 'image' + str(IMAGE_KEY) + '.jpg'
 
-            value_ = json.dumps({'file_id' : file_id, 'key' : image_key_name})
+                # upload image to google drive
+                file_id = driveAPI.FileUpload('temp.jpg', image_key_name, folder_id=RAW_IMAGES_FOLDER_DRIVE_ID)
+                print('File ID uploaded: ', file_id)
 
-            producer.produce("rawImageByte", key=str(IMAGE_KEY), value=value_)
+                value_ = json.dumps({'file_id' : file_id, 'key' : image_key_name})
+
+                producer.produce("rawImageByte", key=str(IMAGE_KEY), value=value_)
+                
+                if SENDING_METHOD == 'flush':
+                    producer.flush()
+                if SENDING_METHOD == 'poll':
+                    producer.poll(0)
             
-            if SENDING_METHOD == 'flush':
-                producer.flush()
-            if SENDING_METHOD == 'poll':
-                producer.poll(0)
+            else:
+                # check rawImage folder exists on results parent folder
+                if not os.path.exists('../results/rawImage'):
+                    os.makedirs('../results/rawImage')
+                
+                # save image to rawImage folder
+                with open('../results/rawImage/image'+str(IMAGE_KEY)+'.jpg', 'wb') as f:
+                    f.write(data)
+                
+                value_ = json.dumps({'key' : 'image'+str(IMAGE_KEY)+'.jpg', 'path' : '../results/rawImage/image'+str(IMAGE_KEY)+'.jpg'})
+                
+                producer.produce("rawImageByte", key=str(IMAGE_KEY), value=value_)
+
+                if SENDING_METHOD == 'flush':
+                    producer.flush()
+                if SENDING_METHOD == 'poll':
+                    producer.poll(0)
 
             IMAGE_KEY += 1
         else:
