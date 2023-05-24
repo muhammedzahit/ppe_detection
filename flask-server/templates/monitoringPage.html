@@ -162,8 +162,8 @@
                     function replaceAll(str, find, replace) {
                         return str.replace(new RegExp(find, 'g'), replace);
                     }
-
-                    if (enableDrive !== "true"){
+                    
+                    if (enableDrive !== true){
                         // change / character to ^ character in recipient variable
                         recipient = replaceAll(recipient,'/', '^')
                         console.log('recipient :',recipient)
