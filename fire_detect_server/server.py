@@ -157,7 +157,7 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
 
             result_image_data.save('../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg')
             # store path and prediction in value variable
-            value = json.dumps({'prediction': 'fire', 'path': '../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg',
+            value = json.dumps({'prediction': "", 'path': '../results/fire_detect/' + 'fire_pred_' + str(counter) + '.jpg',
                                 'key' : 'fire_pred_' + str(counter)})
             # send results to kafka
             producer.produce('fireResults', key=msgKey, value=value)
