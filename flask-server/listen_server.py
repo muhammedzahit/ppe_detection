@@ -53,7 +53,9 @@ client_config['group.id'] = 'streamResults'
 consumer_stream = Consumer(client_config)
 consumer_stream.subscribe(['streamResults'])
 
-driveAPI = DriveAPI('../credentials.json')
+driveAPI = None
+if ENABLE_DRIVE_UPLOAD:
+    driveAPI = DriveAPI('../credentials.json')
 
 def checkMessage(msg):
     if msg is None: 
