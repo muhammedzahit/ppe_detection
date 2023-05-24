@@ -19,4 +19,7 @@ start /B python server.py
 cd ..
 cd ./upsampling_server
 start /B python server.py
+cd ..
+cd ./image_database_server
+start /B python server.py
 pause

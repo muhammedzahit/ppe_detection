@@ -78,7 +78,9 @@ def predict_smoker(image_path = None, image_data = None, msgKey = None):
         if image_path:
             # copy image to results folder with shutil
             shutil.copy(image_path, '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
-        value = json.dumps({'prediction': prediction, 'key': 'cigaratte_pred_' + str(counter) + '.jpg', 'path' : '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg', 'file_id': msgKey})
+        value = json.dumps({'prediction': prediction, 
+                            'key': 'cigaratte_pred_' + str(counter) + '.jpg', 
+                            'path' : '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg', 'file_id': msgKey})
         print('SENDING VALUE TO KAFKA: ', value)
         producer.produce('smokerResults', key=msgKey, value=value)
     

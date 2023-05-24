@@ -21,10 +21,10 @@ env_config = read_env('../ENV.txt')
 RESULTS = {}
 COUNTER = 0
 IMAGE_KEY = 0
-IMAGE_DATABASE_URL = env_config['IMAGE_DATABASE_URL']
 SENDING_METHOD = env_config['SENDING_METHOD']
 ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
 RAW_IMAGES_FOLDER_DRIVE_ID = env_config['RAW_IMAGES_FOLDER_DRIVE_ID']
+IMAGE_DATABASE_URL = env_config['IMAGE_DATABASE_URL']
 
 # CONNECT TO GOOGLE DRIVE
 driveAPI = None
@@ -106,7 +106,7 @@ def imageUploader():
         
 @app.route('/monitoringPage')
 def monitoring_page():
-    return render_template('monitoringPage.html')
+    return render_template('monitoringPage.html', databaseURL = IMAGE_DATABASE_URL)
 
 # add new data to results 
 @app.route('/updateResults', methods = ['POST'])
@@ -122,9 +122,18 @@ def update_results():
         typeImage = data['type']
         if typeImage not in RESULTS:
             RESULTS[typeImage] = []
-       
-        RESULTS[typeImage].append({'key' : data['key'],'success': data['success'], 'image_link': data['image_link'], 'pred' : data['pred']})   
 
+        image_link = None
+        enableDrive = ""
+        if ENABLE_DRIVE_UPLOAD:
+            image_link = data['image_link']
+            enableDrive = "true"
+        else:
+            image_link = data['path']
+            enableDrive = "false"
+
+        RESULTS[typeImage].append({'key' : data['key'],'success': data['success'], 'image_link': image_link, 'pred' : data['pred'], 'enableDrive' : enableDrive})   
+        
     return {'message': 'Info Received'}
 
 

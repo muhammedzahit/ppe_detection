@@ -1,8 +1,8 @@
 {% for result in results %}
     {% if result.success == True %}
-        <button type="button" class="list-group-item list-group-item-action bg-success" data-toggle="modal" data-target="#myModal" data-id="{{result.image_link}}" data-pred="{{result.pred}}">{{result.key}}</button>
+        <button type="button" class="list-group-item list-group-item-action bg-success" data-toggle="modal" data-target="#myModal" data-id="{{result.image_link}}" data-pred="{{result.pred}}" data-enabledrive="{{result.enableDrive}}">{{result.key}}</button>
     {% else %}
-        <button type="button" class="list-group-item list-group-item-action bg-danger" data-toggle="modal" data-target="#myModal" data-id="{{result.image_link}}" data-pred="{{result.pred}}">{{result.key}}</button>
+        <button type="button" class="list-group-item list-group-item-action bg-danger" data-toggle="modal" data-target="#myModal" data-id="{{result.image_link}}" data-pred="{{result.pred}}" data-enabledrive="{{result.enableDrive}}">{{result.key}}</button>
     {% endif %}
 {% endfor %}
 

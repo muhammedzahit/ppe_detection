@@ -7,12 +7,17 @@ from confluent_kafka import Producer, Consumer, KafkaError, KafkaException
 import os
 import json
 import threading
+import shutil
 
 env_config = read_env('../ENV.txt')
 
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 
 FIRE_DETECT_MODEL = env_config['FIRE_DETECT_MODEL']
+
+ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
+
+RAW_IMAGES_FOLDER_DRIVE_ID = env_config['RAW_IMAGES_FOLDER_DRIVE_ID']
 
 # connect to local flask server
 url = env_config['FLASK_SERVER_URL']
@@ -62,9 +67,9 @@ def checkMessage(msg):
             raise KafkaException(msg.error())
     return True
 
-def updateResults(type, image_link, success, pred="", key=""):
+def updateResults(type, image_link, success, pred="", key="", path=""):
     print(url + 'updateResults')
-    r = requests.post(url + 'updateResults', json={'type': type, 'image_link': image_link, 'success': success, 'pred': pred, 'key' : key})
+    r = requests.post(url + 'updateResults', json={'type': type, 'image_link': image_link, 'success': success, 'pred': pred, 'key' : key, "path" : path})
     print(r.json())
             
             
@@ -78,7 +83,9 @@ def thread_type(consumer, consumer_type):
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED : ', msg_json)
 
-            image_link = getDriveDownloadLink(msg_json['file_id'])
+            image_link = ""
+            if ENABLE_DRIVE_UPLOAD:
+                image_link = getDriveDownloadLink(msg_json['file_id'])
 
             pred=""
             if 'prediction' in msg_json:
@@ -87,8 +94,12 @@ def thread_type(consumer, consumer_type):
             success=True
             if 'success' in msg_json:
                 success = msg_json['success']
+            
+            path = ""
+            if 'path' in msg_json:
+                path = msg_json['path']
 
-            updateResults(consumer_type, image_link=image_link, success=success, pred=pred, key=msg_json['key'])
+            updateResults(consumer_type, image_link=image_link, success=success, pred=pred, key=msg_json['key'], path=path)
 
 def thread_type_2(consumer, consumer_type):
     print('THREAD STARTED', consumer_type)
@@ -99,7 +110,17 @@ def thread_type_2(consumer, consumer_type):
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED : ', msg_json)
             
-            file_id = driveAPI.FileUpload(msg_json['path'], msg_json['key'], folder_id='17noLHuDVES1My9knrGuQAgLVjaTqX-Qq')
+            if ENABLE_DRIVE_UPLOAD:
+                file_id = driveAPI.FileUpload(msg_json['path'], msg_json['key'], folder_id=RAW_IMAGES_FOLDER_DRIVE_ID)
+            else:
+                path = msg_json['path']
+                # copy image to results raw images folder with shutter
+
+                # check rawImage folder exists on results parent folder
+                if not os.path.exists('../results/rawImage'):
+                    os.makedirs('../results/rawImage')
+
+                shutil.copyfile(path, '../results/rawImage/' + msg_json['key'] + '.jpg')
 
             producer.produce(topic='rawImageByte', value=json.dumps({'file_id': file_id, 'key': msg_json['key']}))
             producer.flush()

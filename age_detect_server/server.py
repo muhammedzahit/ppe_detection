@@ -122,10 +122,11 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
         if not os.path.exists('../results/age_detect_server'):
             os.makedirs('../results/age_detect_server')
         #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
-        shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
+        shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
         #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
 
-        value = json.dumps({'prediction': max_age, 'path' : '../results/age_detect_server/age_detect_server_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg'})
+        value = json.dumps({'prediction': max_age, 'key' : 'age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg',
+                            'path' : '../results/age_detect_server/age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg'})
         print('SENDING VALUE TO KAFKA: ', value)
         producer.produce('ageResults', key=msgKey, value=value)
 
