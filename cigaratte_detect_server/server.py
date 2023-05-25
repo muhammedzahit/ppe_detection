@@ -14,7 +14,7 @@ env_config = read_env('../ENV.txt')
 ENABLE_UPSAMPLING = env_config['ENABLE_UPSAMPLING'] == 'True'
 SENDING_METHOD = env_config['SENDING_METHOD']
 ENABLE_DRIVE_UPLOAD = env_config['ENABLE_DRIVE_UPLOAD'] == 'True'
-MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' # 'EFFICIENTNETB3'
+MODEL = 'EFFICIENTNETB3' # 'MOBILENETV2' 
 
 # CONNECT TO KAFKA
 client_config = read_ccloud_config('../client.txt')
@@ -59,12 +59,16 @@ def predict_smoker(parent_image_id = None,image_path = None, image_data = None, 
         image_path = 'test.jpg' 
 
     prediction = None
+    pred_rate = None
 
     if MODEL == 'MOBILENETV2':
         prediction = mobilenetv2_model.predict_cigaratte_smoker(model, gen, image_path)
+        pred_rate = 0.75
     elif MODEL == 'EFFICIENTNETB3':
-        prediction = efficientnetb3_model.predict(model, image_path)
+        prediction, pred_rate = efficientnetb3_model.predict(model, image_path)
     counter += 1
+
+    prediction = prediction + f"(%{pred_rate * 100})"
 
     
     if ENABLE_DRIVE_UPLOAD:

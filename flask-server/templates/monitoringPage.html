@@ -102,20 +102,9 @@
                 <div class="card">
                     <img class="card-img-top" src="https://storage.googleapis.com/kaggle-datasets-images/3031348/5211375/12b53a6decfdd0ceda299d067f69f1e5/dataset-cover.jpg?t=2023-03-22-04-04-52" alt="Card image cap">
                     <div class="card-body">
-                        <h5 class="card-title">HardHat-Vest Detection</h5>
+                        <h5 class="card-title">HardHat-Vest, Age, Smoking Detection</h5>
                         <div class="list-group">
 							<div id="hardhat_results">
-
-							</div>
-						</div>
-                    </div>
-                </div>
-                <div class="card">
-                    <img class="card-img-top" src="https://www.ris-ai.com/static/images/models/gender-age-detection-opencv.jpg" alt="Card image cap">
-                    <div class="card-body">
-                        <h5 class="card-title">Age Detection</h5>
-                        <div class="list-group">
-							<div id="age_results">
 
 							</div>
 						</div>
@@ -127,17 +116,6 @@
                         <h5 class="card-title">Fire-Smoke Detection</h5>
                         <div class="list-group">
 							<div id="fire_results">
-
-							</div>
-						</div>
-                    </div>
-                </div>
-				<div class="card">
-                    <img class="card-img-top" src="https://i.ytimg.com/vi/vEnQIptZzyI/maxresdefault.jpg" alt="Card image cap">
-                    <div class="card-body">
-                        <h5 class="card-title">Smoker Detection</h5>
-                        <div class="list-group">
-							<div id="smoker_results">
 
 							</div>
 						</div>
@@ -174,13 +152,13 @@
                     }
                     console.log('pred :',pred)
                     if(pred !== "")
-                        modal.find('#modalpred').text('PREDICTION : ' + pred)
+                        modal.find('#modalpred').text(pred)
                     
                 })
 			</script>
 			<script>
-                let MONITORING_INTERVAL = 2000;
-				let liste = ['hardhat_results', 'age_results', 'fire_results', 'smoker_results']
+                let MONITORING_INTERVAL = 1000;
+				let liste = ['hardhat_results', 'fire_results']
 				setInterval(() => {
 					for (let i = 0; i < liste.length; i++){
 						let place_for_result = liste[i]

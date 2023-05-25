@@ -56,4 +56,4 @@ def predict(model, image_path):
     y_pred = np.argmax(preds, axis=1)
     print(y_pred, preds)
     labels = ['not_smoking', 'smoking']
-    return labels[y_pred[0]]
+    return labels[y_pred[0]], preds[0][y_pred[0]]

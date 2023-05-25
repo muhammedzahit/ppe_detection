@@ -33,21 +33,13 @@ client_config = read_ccloud_config('../client.txt')
 print('CLIENT CONFIG',client_config)
 producer = Producer(client_config)
 
-client_config['group.id'] = 'hardhatResults'
-consumer_hardhat = Consumer(client_config)
-consumer_hardhat.subscribe(['hardhatResults'])
+client_config['group.id'] = 'finalMergerResults'
+consumer_final = Consumer(client_config)
+consumer_final.subscribe(['finalMerger'])
 
 client_config['group.id'] = 'fireResults'
 consumer_fire = Consumer(client_config)
 consumer_fire.subscribe(['fireResults'])
-
-client_config['group.id'] = 'ageResults'
-consumer_age = Consumer(client_config)
-consumer_age.subscribe(['ageResults'])
-
-client_config['group.id'] = 'smokerResults'
-consumer_smoker = Consumer(client_config)
-consumer_smoker.subscribe(['smokerResults'])
 
 client_config['group.id'] = 'streamResults'
 consumer_stream = Consumer(client_config)
@@ -77,6 +69,32 @@ def updateResults(type, image_link, success, pred="", key="", path=""):
             
 
 def thread_type(consumer, consumer_type):
+    COUNTER = 0
+    print('THREAD STARTED', consumer_type)
+    while True:
+        msg = consumer.poll(timeout=1.0)
+        if checkMessage(msg):
+            #msg = msg.value().decode('utf-8')
+            msg_json = json.loads(msg.value().decode('utf-8'))
+            print('MESSAGE RECEIVED : ', msg_json)
+
+            image_link = ""
+            if ENABLE_DRIVE_UPLOAD:
+                image_link = getDriveDownloadLink(msg_json['result_image_id'])
+
+            pred = 'Age : ' + str(msg_json['pred_age_results']) + ' \\ '
+            pred += '\nSmoker : ' + str(msg_json['pred_smoker_results'])
+
+            success=True
+            if 'success' in msg_json:
+                success = msg_json['success']
+            
+            path = msg_json['result_image_id']
+
+            updateResults(consumer_type, image_link=image_link, success=success, pred=pred, key='Person Prediction ' + str(COUNTER), path=path)
+            COUNTER += 1
+
+def thread_type_2(consumer, consumer_type):
     print('THREAD STARTED', consumer_type)
     while True:
         msg = consumer.poll(timeout=1.0)
@@ -103,7 +121,7 @@ def thread_type(consumer, consumer_type):
 
             updateResults(consumer_type, image_link=image_link, success=success, pred=pred, key=msg_json['key'], path=path)
 
-def thread_type_2(consumer, consumer_type):
+def thread_type_3(consumer, consumer_type):
     print('THREAD STARTED', consumer_type)
     while True:
         msg = consumer.poll(timeout=1.0)
@@ -128,8 +146,6 @@ def thread_type_2(consumer, consumer_type):
             producer.flush()
 
 
-threading.Thread(target=thread_type, args=(consumer_age, 'age_results')).start()
-threading.Thread(target=thread_type, args=(consumer_smoker, 'smoker_results')).start()
-threading.Thread(target=thread_type, args=(consumer_fire, 'fire_results')).start()
-threading.Thread(target=thread_type, args=(consumer_hardhat, 'hardhat_results')).start()
-threading.Thread(target=thread_type_2, args=(consumer_stream, 'stream_results')).start()
+threading.Thread(target=thread_type, args=(consumer_final, 'hardhat_results')).start()
+threading.Thread(target=thread_type_2, args=(consumer_fire, 'fire_results')).start()
+threading.Thread(target=thread_type_3, args=(consumer_stream, 'stream_results')).start()
