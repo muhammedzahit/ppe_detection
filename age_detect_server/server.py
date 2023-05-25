@@ -65,7 +65,7 @@ model = tf.keras.models.load_model('./model/model.h5')
 counter = 0
 
 
-def predict_age(image_path = None, image_data = None, msgKey = None):
+def predict_age(parent_image_id,image_path = None, image_data = None, msgKey = None):
     global counter
     print('PREDICTING AGE...')
     results = None
@@ -114,19 +114,21 @@ def predict_age(image_path = None, image_data = None, msgKey = None):
     
     if ENABLE_DRIVE_UPLOAD:
         # send result to kafka
-        value = json.dumps({'prediction': max_age, 'file_id': msgKey, 'key' : 'age_detect_server_' + str(counter) + '.jpg'})
+        value = json.dumps({'prediction': max_age, 'file_id': msgKey, 
+                            'key' : 'age_detect_server_' + str(counter) + '.jpg'
+                            ,'parent_image_id' : parent_image_id})
         print('SENDING VALUE TO KAFKA: ', value)
         producer.produce('ageResults', key=msgKey, value=value)
     else:
-        # check age_detect_server folder in results folder
+        #check age_detect_server folder in results folder
         if not os.path.exists('../results/age_detect_server'):
             os.makedirs('../results/age_detect_server')
-        #os.popen("cp faces/face" + str(i) + ".jpg" + '../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender: ' + pred_gender + '-age:' + str(pred_age) + '.jpg')
-        shutil.copyfile("faces/face" + str(i) + ".jpg", '../results/age_detect_server/age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg')
-        #cv2.imwrite('../results/age_detect_server/age_detect_server_' + str(counter)  + '-gender:' + pred_gender + '-age:' + str(pred_age) + '.jpg', img2)
-
-        value = json.dumps({'prediction': max_age, 'key' : 'age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg',
-                            'path' : '../results/age_detect_server/age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(pred_age) + '.jpg'})
+        shutil.copyfile(image_path, '../results/age_detect_server/age_pred_' + str(counter)  + '-Age ' + str(max_age) + '.jpg')
+        
+        value = json.dumps({'prediction': max_age, 
+                            'key' : 'age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(max_age) + '.jpg',
+                            'path' : '../results/age_detect_server/age_pred_' + str(counter)  + '-Age ' + str(max_age) + '.jpg',
+                            'parent_image_id' : parent_image_id})
         print('SENDING VALUE TO KAFKA: ', value)
         producer.produce('ageResults', key=msgKey, value=value)
 
@@ -169,9 +171,9 @@ try:
             print('MESSAGE RECEIVED IN AGE DETECTION SERVER : ', msg_json)
 
             if ENABLE_DRIVE_UPLOAD:
-                predict_age(image_data= getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey = msg_json['file_id'])
+                predict_age(parent_image_id=msg_json['file_id'],image_data= getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey = msg_json['file_id'])
             else:
-                predict_age(image_path = msg_json['path'], msgKey = str(counter))
+                predict_age(parent_image_id=msg_json['path'],image_path = msg_json['path'], msgKey = str(counter))
             
 finally:
     # Close down consumer to commit final offsets.

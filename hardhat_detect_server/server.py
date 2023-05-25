@@ -47,7 +47,7 @@ if ENABLE_DRIVE_UPLOAD:
     driveAPI = DriveAPI('../credentials.json')
 
 
-def predict_hardhat(image_path = None, image_data = None):
+def predict_hardhat(parent_image_id,image_path = None, image_data = None):
     # helmet : 0
     # vest : 1
     # head : 2
@@ -77,7 +77,10 @@ def predict_hardhat(image_path = None, image_data = None):
         file_id = driveAPI.FileUpload('temp.jpg', 'hardhat_pred_' + str(counter) + '.jpg', folder_id=HARDHAT_RESULTS_FOLDER_DRIVE_ID)
 
         # SEND RESULTS TO KAFKA
-        value_ = {'file_id' : file_id, 'key' : 'hardhat_pred_' + str(counter) + '.jpg'}
+        value_ = {'file_id' : file_id, 
+                  'key' : 'hardhat_pred_' + str(counter) + '.jpg',
+                  'parent_image_id' : parent_image_id,
+                  'result_image_id' : file_id}
         producer.produce('hardhatResults', key=str(counter), value=json.dumps(value_))
     else:
         if not os.path.exists('../results/hardhat_detect'):
@@ -85,7 +88,11 @@ def predict_hardhat(image_path = None, image_data = None):
 
         im.save('../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg')
         # store path in value variable
-        value_ = {'path' : '../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg', 'key' : 'hardhat_pred_' + str(counter) + '.jpg'}
+        path_ = '../results/hardhat_detect/' + 'hardhat_pred_' + str(counter) + '.jpg'
+        value_ = {'path' : path_,
+                   'key' : 'hardhat_pred_' + str(counter) + '.jpg', 
+                   'parent_image_id' : parent_image_id,
+                   'result_image_id' : path_}
         producer.produce('hardhatResults', key=str(counter), value=json.dumps(value_))
 
 
@@ -123,9 +130,9 @@ try:
             print('MESSAGE RECEIVED IN HARDHAT DETECT SERVER: ', msg_json)
 
             if ENABLE_DRIVE_UPLOAD:
-                predict_hardhat(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
+                predict_hardhat(parent_image_id = msg_json['file_id'], image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']))
             else:
-                predict_hardhat(image_path = msg_json['path'])
+                predict_hardhat(parent_image_id=msg_json['path'], image_path = msg_json['path'])
             
 finally:
     # Close down consumer to commit final offsets.

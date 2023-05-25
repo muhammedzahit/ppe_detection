@@ -50,7 +50,7 @@ counter = 0
 
 
 
-def predict_smoker(image_path = None, image_data = None, msgKey = None):
+def predict_smoker(parent_image_id = None,image_path = None, image_data = None, msgKey = None):
     global counter
     print('CHECKING CIGARATTE SMOKER...')
     
@@ -69,7 +69,10 @@ def predict_smoker(image_path = None, image_data = None, msgKey = None):
     
     if ENABLE_DRIVE_UPLOAD:
         # send results to kafka
-        value = json.dumps({'prediction': prediction, 'key': 'cigaratte_pred_' + str(counter) + '.jpg', 'file_id': msgKey})
+        value = json.dumps({'prediction': prediction, 
+                            'key': 'cigaratte_pred_' + str(counter) + '.jpg', 
+                            'file_id': msgKey,
+                            'parent_image_id' : parent_image_id})
         print('SENDING VALUE TO KAFKA: ', value)
         producer.produce('smokerResults', key=msgKey, value=value)
     else:
@@ -80,7 +83,8 @@ def predict_smoker(image_path = None, image_data = None, msgKey = None):
             shutil.copy(image_path, '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg')
         value = json.dumps({'prediction': prediction, 
                             'key': 'cigaratte_pred_' + str(counter) + '.jpg', 
-                            'path' : '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg', 'file_id': msgKey})
+                            'path' : '../results/cigaratte_detect/cigaratte_pred_' + str(counter) + '_' + prediction + '.jpg', 'file_id': msgKey
+                            ,'parent_image_id' : parent_image_id})
         print('SENDING VALUE TO KAFKA: ', value)
         producer.produce('smokerResults', key=msgKey, value=value)
     
@@ -123,9 +127,9 @@ try:
             print('MESSAGE RECEIVED IN CIGARETTE DETECT SERVER : ', msg_json)
 
             if ENABLE_DRIVE_UPLOAD:
-                predict_smoker(image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey=msg_json['file_id'])
+                predict_smoker(parent_image_id=msg_json['file_id'],image_data=getImageDataFromDriveFileId(driveAPI,msg_json['file_id']), msgKey=msg_json['file_id'])
             else:
-                predict_smoker(image_path=msg_json['path'], msgKey=msg_json['key'])
+                predict_smoker(parent_image_id=msg_json['path'],image_path=msg_json['path'], msgKey=msg_json['key'])
             
 finally:
     # Close down consumer to commit final offsets.
