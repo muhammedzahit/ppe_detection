@@ -9,11 +9,12 @@ from utils import read_ccloud_config, get_bytes_from_image_data, get_image_data_
     getImageDataFromDriveFileId
 import datetime
 from fsrcnn import load_model, upscale_image
+from datetime import datetime
 
 ANIME_4K = 'anime4k'
 FSRCNN = 'fsrcnn'
 FSRCNN_SCALE = 2
-UPSAMPLING_MODE = FSRCNN
+UPSAMPLING_MODE = ANIME_4K
 
 #CONNECT TO KAFKA
 
@@ -52,10 +53,15 @@ def upsample_image(image_data):
     global counter
     counter += 1
     output_file = None
+    print('-------------------------------')
+    print('---------------------------------------------')
+    print('IMAGE UPSAMPLING STARTED', datetime.utcnow())
+    print('---------------------------------------------')
+    print('-------------------------------')
     if UPSAMPLING_MODE == ANIME_4K:
         image_data.save('temp.jpg')
         pyanime4k.upscale_images(pathlib.Path('temp.jpg'))
-        output_file = 'temp_output.png'
+        output_file = 'temp_output.jpg'
         
     elif UPSAMPLING_MODE == FSRCNN:
         image_data.save('temp.jpg')
@@ -78,10 +84,10 @@ def upsample_image(image_data):
         value_ = json.dumps({'path' : '../results/upsampled/upsampled_' + str(counter) + '.jpg', 'key' : 'upsampled' + str(counter) + '.jpg'})
         producer.produce('upsampledPersonByte', key = "upsampled" + str(counter), value = value_)
 
-
-    producer.flush()
-    print(str(datetime.datetime.now()),'IMAGE SENT TO UPSAMPLED_IMAGE_BYTE TOPIC')
     print('---------------------------------')
+    print('IMAGE UPSAMPLING FINISHED', datetime.utcnow())
+    print('---------------------------------')
+    producer.flush()
 
 
 

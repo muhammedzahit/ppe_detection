@@ -21,3 +21,4 @@ docker exec -it kafka /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server 
 - ageSmokerMerger
 - hardhatSmokerMerger
 - finalMerger
+- streamResults

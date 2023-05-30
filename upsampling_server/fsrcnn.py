@@ -24,7 +24,7 @@ def load_model(scale):
 def upscale_image(image_path, scale, model):
     image_path = image_path
     ckpt_path = ''
-    scale = 2
+    scale = scale
 
     if scale not in [2, 3, 4]:
         raise ValueError("must be 2, 3 or 4")

@@ -7,6 +7,7 @@ from utils import read_env
 from streamPage import gen_frames
 import json
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'random'
@@ -60,7 +61,11 @@ def imageUploader():
         if 'file'+str(i) in request.files:
             f = request.files['file'+str(i)]
             data = f.stream.read()
-
+            print('-------------------------------')
+            print('-------------------------------')
+            print('IMAGE UPLOADING', datetime.utcnow())
+            print('-------------------------------')
+            print('-------------------------------')
             if ENABLE_DRIVE_UPLOAD:
 
                 # save temp image to local

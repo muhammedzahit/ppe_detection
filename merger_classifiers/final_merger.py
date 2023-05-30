@@ -1,4 +1,5 @@
 # connect local flask server and get response
+from datetime import datetime
 import requests
 import sys
 sys.path.append('../')
@@ -66,6 +67,13 @@ def thread_type(consumer, consumer_type):
                 print('-'*50)
                 print(stash[msg_json['parent_image_id']])
                 print('-'*50)
+
+                print('-------------------------------')
+                print('-------------------------------')
+                print('RESULTS MERGED', datetime.utcnow())
+                print('-------------------------------')
+                print('-------------------------------')
+
                 # SEND TO KAFKA
                 producer.produce(topic='finalMerger', value=json.dumps(stash[msg_json['parent_image_id']]))
 

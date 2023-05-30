@@ -126,7 +126,7 @@ def predict_age(parent_image_id,image_path = None, image_data = None, msgKey = N
         shutil.copyfile(image_path, '../results/age_detect_server/age_pred_' + str(counter)  + '-Age ' + str(max_age) + '.jpg')
         
         value = json.dumps({'prediction': max_age, 
-                            'key' : 'age_pred_' + str(counter)  + '-Gender ' + pred_gender + '-Age ' + str(max_age) + '.jpg',
+                            'key' : 'age_pred_' + str(counter)  + '-Age ' + str(max_age) + '.jpg',
                             'path' : '../results/age_detect_server/age_pred_' + str(counter)  + '-Age ' + str(max_age) + '.jpg',
                             'parent_image_id' : parent_image_id})
         print('SENDING VALUE TO KAFKA: ', value)

@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 sys.path.append('../')
 from confluent_kafka import Consumer, Producer
@@ -114,6 +115,12 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
         if SENDING_METHOD == 'poll':
             producer.poll(0)
 
+        print('-------------------------------')
+        print('-------------------------------')
+        print('FIRE RESULT SAVED', datetime.utcnow())
+        print('-------------------------------')
+        print('-------------------------------')
+
         counter += 1
     
     elif MODEL_TYPE == 'YOLO':
@@ -167,6 +174,12 @@ def predict_fire(image_path = None, image_data = None, msgKey = None):
             producer.flush()
         if SENDING_METHOD == 'poll':
             producer.poll(0)
+
+        print('-------------------------------')
+        print('-------------------------------')
+        print('FIRE RESULT SAVED', datetime.utcnow())
+        print('-------------------------------')
+        print('-------------------------------')
 
         print('RESULT SENT TO KAFKA')
 

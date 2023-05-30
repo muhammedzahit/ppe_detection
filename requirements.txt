@@ -16,4 +16,9 @@ Werkzeug
 keras_preprocessing
 pyanime4k
 wget
-patoolib
+patool
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+tensorflow
+scikit-learn
