@@ -4,3 +4,4 @@ results/*
 *.pickle
 image_database_server/images/*
 credentials.json
+flask-server/stream_page_captures/*

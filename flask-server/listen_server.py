@@ -129,6 +129,7 @@ def thread_type_3(consumer, consumer_type):
             #msg = msg.value().decode('utf-8')
             msg_json = json.loads(msg.value().decode('utf-8'))
             print('MESSAGE RECEIVED : ', msg_json)
+            file_id = None
             
             if ENABLE_DRIVE_UPLOAD:
                 file_id = driveAPI.FileUpload(msg_json['path'], msg_json['key'], folder_id=RAW_IMAGES_FOLDER_DRIVE_ID)
@@ -139,10 +140,11 @@ def thread_type_3(consumer, consumer_type):
                 # check rawImage folder exists on results parent folder
                 if not os.path.exists('../results/rawImage'):
                     os.makedirs('../results/rawImage')
-
+                print("current", os.getcwd())
                 shutil.copyfile(path, '../results/rawImage/' + msg_json['key'] + '.jpg')
+                file_id = '../results/rawImage/' + msg_json['key'] + '.jpg'
 
-            producer.produce(topic='rawImageByte', value=json.dumps({'file_id': file_id, 'key': msg_json['key']}))
+            producer.produce(topic='rawImageByte', value=json.dumps({'file_id': file_id, 'path' : file_id,'key': msg_json['key']}))
             producer.flush()
 
 

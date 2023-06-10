@@ -4,7 +4,7 @@ import datetime
 import os
 
 camera = cv2.VideoCapture(0)
-STREAM_PAGE_FPS = 0.5
+STREAM_PAGE_FPS = 0.25
 STREAM_PAGE_COUNTER = 1
 STREAM_PAGE_SAVE_CAPTIONS = True
 
@@ -35,13 +35,13 @@ def gen_frames(producer):
                 if(STREAM_PAGE_SAVE_CAPTIONS):
                     cv2.imwrite('./stream_page_captures/a' + str(STREAM_PAGE_COUNTER) + '.jpg', frame)
 
-                STREAM_PAGE_COUNTER += 1
-
                 # send image to kafka
                 value_ = json.dumps({'path': './stream_page_captures/a' + str(STREAM_PAGE_COUNTER) + '.jpg', 'key' : 'a' + str(STREAM_PAGE_COUNTER) + '.jpg'})
 
                 producer.produce("streamResults", key="key", value=value_)
                 producer.flush()   
+
+                STREAM_PAGE_COUNTER += 1
 
         yield(b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_buffer + b'\r\n') 
