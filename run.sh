@@ -1,0 +1,31 @@
+pip install -r requirements.txt &&
+cd ./age_detect_server &&
+python3 server.py &
+cd .. &&
+cd ./cigaratte_detect_server &&
+python3 server.py &
+cd .. &&
+cd ./fire_detect_server &&
+python3 server.py &
+cd .. &&
+cd ./flask-server &&
+python3 server.py &
+python3 listen_server.py &
+cd .. &&
+cd ./hardhat_detect_server &&
+python3 server.py &
+cd .. &&
+cd ./person_detect_server &&
+python3 server.py &
+cd .. &&
+cd ./upsampling_server &&
+python3 server.py &
+cd .. &&
+cd ./image_database_server &&
+python3 server.py &
+cd .. &&
+cd ./merger_classifiers &&
+python3 age_smoker_merger.py &
+python3 hardhat_age_merger.py &
+python3 hardhat_smoker_merger.py &
+python3 final_merger.py
