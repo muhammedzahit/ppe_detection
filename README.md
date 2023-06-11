@@ -35,13 +35,13 @@ Deep learning models require large amounts of data. The collection of data from 
 
 ### Architecture
 
-![Architecture](./Proje%20Mimarisi/resimler/architecture_w_1.png)
+![Architecture](./Proje%20Mimarisi/resimler/architecture_w_2.png)
 
 In the study, the ecosystem consists of 3 main modules. These; The Module where Deep Learning Models are Run, the Database Module where the raw image data uploaded to the ecosystem and the deep learning output results are stored on the cloud, the User Interface Module where the user can upload the image data to the ecosystem and observe the prediction results. All of these modules use the same ecosystem and need to communicate with each other seamlessly. The ecosystem uses the Apache Kafka microservice architecture to manage this communication process. Apache Kafka needs a naming system for applications communicating with each other to identify each other. Zookeeper is also used for this naming system. It ensures safe and effective transmission of messages through Kafka Broker. Brokers provide the ecosystem with the ability to tolerate error. If a Broker becomes dysfunctional for any reason, other Brokers can tolerate this error. When the dysfunctional Broker becomes active again, it updates the message flow from other Brokers. 
 
 Thanks to Apache Kafka's scalability feature, the number of modules in the project can be increased. There is the possibility of sharing the load of new modules to distributed systems. In this way, the performance of the system can be increased. When it is desired to add a new deep learning model, by adding a new topic to Kafka, the new model is included in the system. In this way, the ecosystem is enlarged without affecting the overall performance of the system.
 
-![Architecture](./Proje%20Mimarisi/resimler/architecture_w_2.png)
+![Architecture](./Proje%20Mimarisi/resimler/architecture_w_1.png)
 
 When there is a raw image data input by the video contents in the ecosystem, this image is firstly up to the Database Module. This module setup returns a unique <b>FileID</b> value representing this data. The value <b>FileID</b> has the Apache Kafka architecture <b>Raw Image</b> header.
 Person Detection and Fire-Smoke Detection models from Deep Learning Models are connected to the <b>Raw Image</b> Kafka header as Consumer. Through this incoming reads through the data. The raw image witnessing of these two models processes and produces output. The Person Detection model cuts the shadow human frames within the picture, and the data it cuts ends up in the Database Module. Likewise, a unique <b>FileID</b> value is retrieved for each of these archives. Person Detection Model sends <b>FileID</b> values separately to <b>CroppedPersonImage</b> Kafka headers. The Fire-Smoke Detection model, on the other hand, makes predictions on the raw data and forwards the prediction results to the <b>Results</b> Kafka header as Producer.
