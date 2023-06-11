@@ -123,8 +123,13 @@ def read_env(file_path):
   env = env_file.read()
   env = env.split('\n')
   env = [i.split('=') for i in env]
-  env = {i[0]:i[1] for i in env}
-  return env
+
+  env_new = {}
+  for i in env:
+     if len(i) > 1:
+        env_new[i[0]] = i[1]
+
+  return env_new
 
 class DriveAPI:
     global SCOPES
