@@ -93,6 +93,8 @@ The User Interface Module can observe the results of Deep Learning Models. The m
     sudo bash run.sh
     ```
 
+5. Go to http://localhost:5000/ to interact with the user interface.
+
 #### Windows
 
 1. Pull required docker images
@@ -110,3 +112,4 @@ The User Interface Module can observe the results of Deep Learning Models. The m
     ```
 4. Run run.bat script from file explorer. In first run it will download required models and weights it may take a while.
 
+5. Go to http://localhost:5000/ to interact with the user interface.
