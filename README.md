@@ -4,9 +4,9 @@
 
 Note: GIF files are large it may take a while to load.
 
-![demo.webm](./Proje%20Mimarisi/demo1.gif)
+![demo.webm](./Proje%20Mimarisi/demo1_resized.gif)
 
-![demo.webm](./Proje%20Mimarisi/demo2.gif)
+![demo.webm](./Proje%20Mimarisi/demo2_resized.gif)
 
 ### Project Members
 
